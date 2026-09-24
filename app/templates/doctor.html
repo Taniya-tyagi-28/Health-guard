@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Portal - {{ doctor.name }} | HealthGuard{% endblock %}
+
+{% block content %}
+<div class="portal-header-bar">
+    <div>
+        <div class="breadcrumb">Portals / Physician Portal / {{ doctor.specialty }}</div>
+        <h1 class="page-title">{{ doctor.name }}</h1>
+        <div class="patient-tags">
+            <span class="tag-pill">{{ doctor.specialty }}</span>
+            <span class="tag-pill">{{ doctor.email }}</span>
+            <span class="tag-pill">{{ doctor.phone }}</span>
+        </div>
+    </div>
+
+    <!-- Doctor Switcher & Add Rx CTA -->
+    <div class="header-actions-group">
+        <div class="quick-switcher">
+            <label for="switchDoc">Switch Doctor:</label>
+            <select id="switchDoc" class="form-select" onchange="window.location.href='/doctor/' + this.value;">
+                {% for d in all_doctors %}
+                    <option value="{{ d.id }}" {% if d.id == doctor.id %}selected{% endif %}>
+                        {{ d.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="openAddRxModal();">
+            + Add Prescription
+        </button>
+    </div>
+</div>
+
+<!-- Doctor Statistics KPIs -->
+<div class="dashboard-stats-grid">
+    <div class="stat-card">
+        <div class="stat-title">Assigned Patients</div>
+        <div class="stat-main">
+            <div class="stat-num text-indigo">{{ stats.total_patients or 0 }}</div>
+            <div class="stat-badge badge-neutral">Active Roster</div>
+        </div>
+        <div class="stat-subtext">Monitored for medication adherence</div>
+    </div>
+
+    <div class="stat-card stat-alert-high">
+        <div class="stat-title">High Risk Non-Adherence</div>
+        <div class="stat-main">
+            <div class="stat-num text-rose">{{ stats.high_risk or 0 }}</div>
+            <div class="stat-badge badge-danger">Immediate Outreach</div>
+        </div>
+        <div class="stat-subtext">Patients requiring clinical follow-up within 48h</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-title">Moderate Risk Cohort</div>
+        <div class="stat-main">
+            <div class="stat-num text-amber">{{ stats.med_risk or 0 }}</div>
+            <div class="stat-badge badge-warning">Watchlist</div>
+        </div>
+        <div class="stat-subtext">Automated reminders scheduled</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-title">Low Risk (Compliant)</div>
+        <div class="stat-main">
+            <div class="stat-num text-emerald">{{ stats.low_risk or 0 }}</div>
+            <div class="stat-badge badge-success">On Track</div>
+        </div>
+        <div class="stat-subtext">Standard clinical pathway</div>
+    </div>
+</div>
+
+<!-- Patient Roster Table Panel -->
+<div class="panel-card mt-4">
+    <div class="panel-header flex-between">
+        <div>
+            <h2>Assigned Patient Adherence Roster</h2>
+            <p class="panel-subtitle">Live ML-evaluated risk alerts &amp; intervention recommendations</p>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="filter-pills">
+            <a href="/doctor/{{ doctor.id }}?risk=All" class="filter-pill {% if current_filter == 'All' %}active{% endif %}">All</a>
+            <a href="/doctor/{{ doctor.id }}?risk=High" class="filter-pill pill-danger {% if current_filter == 'High' %}active{% endif %}">High Risk</a>
+            <a href="/doctor/{{ doctor.id }}?risk=Medium" class="filter-pill pill-warning {% if current_filter == 'Medium' %}active{% endif %}">Medium</a>
+            <a href="/doctor/{{ doctor.id }}?risk=Low" class="filter-pill pill-success {% if current_filter == 'Low' %}active{% endif %}">Low</a>
+        </div>
+    </div>
+
+    {% if patients %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Patient Name</th>
+                        <th>Demographics</th>
+                        <th>Adherence Risk Level (ML)</th>
+                        <th>Missed Doses</th>
+                        <th>Missed Appts</th>
+                        <th>Active Meds</th>
+                        <th>Clinical Recommendation</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in patients %}
+                        <tr class="{% if p.risk_level == 'High' %}row-high-risk{% endif %}">
+                            <td>
+                                <div class="patient-name-cell">
+                                    <strong>{{ p.name }}</strong>
+                                    <span class="text-muted small">ID #{{ p.id }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div>{{ p.gender }}, {{ p.age }} yrs</div>
+                                <div class="text-muted small truncate-text" title="{{ p.chronic_conditions }}">{{ p.chronic_conditions }}</div>
+                            </td>
+                            <td>
+                                <span class="badge-risk badge-risk-{{ p.risk_level|lower if p.risk_level else 'low' }}">
+                                    {{ p.risk_level or 'Low' }} Risk
+                                    {% if p.risk_score %}
+                                        <small>({{ p.risk_score }}%)</small>
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="counter-badge {% if p.total_missed_doses > 3 %}counter-danger{% elif p.total_missed_doses > 0 %}counter-warning{% else %}counter-safe{% endif %}">
+                                    {{ p.total_missed_doses or 0 }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="counter-badge {% if p.total_missed_appts > 1 %}counter-danger{% elif p.total_missed_appts > 0 %}counter-warning{% else %}counter-safe{% endif %}">
+                                    {{ p.total_missed_appts or 0 }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-neutral-sm">{{ p.active_meds_count or 0 }} meds</span>
+                            </td>
+                            <td class="rec-cell">
+                                <span class="text-small" title="{{ p.recommendations }}">{{ p.recommendations or 'Standard monitoring protocol.' }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group-actions">
+                                    <a href="/patient/{{ p.id }}" class="btn-xs btn-outline" title="Open Patient Portal">
+                                        View Portal
+                                    </a>
+                                    <button class="btn-xs btn-primary" onclick="openAddRxModalForPatient({{ p.id }}, '{{ p.name }}');" title="Prescribe Medication">
+                                        + Prescribe
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No patients match the selected filter criteria.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Add Prescription Modal -->
+<div class="modal-overlay" id="addRxModal" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Add New Prescription</h3>
+            <button class="modal-close" onclick="closeAddRxModal();">&times;</button>
+        </div>
+        <form id="addRxForm" onsubmit="submitNewPrescription(event, {{ doctor.id }});">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="rxPatientId">Select Patient:</label>
+                    <select id="rxPatientId" name="patient_id" class="form-select" required>
+                        {% for p in patients %}
+                            <option value="{{ p.id }}">{{ p.name }} (ID #{{ p.id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="rxMedName">Medication Name:</label>
+                        <input type="text" id="rxMedName" name="medication_name" class="form-input" placeholder="e.g. Metformin ER" required>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="rxDosage">Dosage:</label>
+                        <input type="text" id="rxDosage" name="dosage" class="form-input" placeholder="e.g. 500mg" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="rxFrequency">Frequency:</label>
+                        <select id="rxFrequency" name="frequency" class="form-select" required>
+                            <option value="Once daily (Morning)">Once daily (Morning)</option>
+                            <option value="Once daily (Bedtime)">Once daily (Bedtime)</option>
+                            <option value="Twice daily (Morning/Evening)">Twice daily (Morning/Evening)</option>
+                            <option value="Three times daily">Three times daily</option>
+                            <option value="As needed (PRN)">As needed (PRN)</option>
+                        </select>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="rxDuration">Treatment Duration (Days):</label>
+                        <input type="number" id="rxDuration" name="treatment_duration_days" class="form-input" value="30" min="1" max="365" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="rxInstructions">Clinical Instructions:</label>
+                    <textarea id="rxInstructions" name="instructions" class="form-textarea" rows="2" placeholder="e.g. Take with breakfast. Drink plenty of fluids."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeAddRxModal();">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="btnSubmitRx">Save &amp; Recalculate Risk</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

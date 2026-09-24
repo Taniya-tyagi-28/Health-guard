@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}ML Adherence Risk Simulator | HealthGuard{% endblock %}
+
+{% block content %}
+<div class="portal-header-bar">
+    <div>
+        <div class="breadcrumb">Portals / Clinical Decision Support / ML Simulator</div>
+        <h1 class="page-title">Random Forest Medication Adherence &amp; Follow-Up Risk Simulator</h1>
+        <p class="text-muted">Interactively test how patient demographics, past behavior, and regimen complexity influence predictive risk stratification.</p>
+    </div>
+</div>
+
+<div class="two-column-layout mt-4">
+    <!-- Simulator Form Controls -->
+    <div class="content-column main-col">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <div class="panel-icon bg-amber">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="4" y1="21" x2="4" y2="14"/>
+                            <line x1="4" y1="10" x2="4" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12" y2="3"/>
+                            <line x1="20" y1="21" x2="20" y2="16"/>
+                            <line x1="20" y1="12" x2="20" y2="3"/>
+                            <line x1="1" y1="14" x2="7" y2="14"/>
+                            <line x1="9" y1="8" x2="15" y2="8"/>
+                            <line x1="17" y1="16" x2="23" y2="16"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2>Patient Feature Inputs</h2>
+                        <p class="panel-subtitle">Adjust the 5 core clinical variables to simulate ML inference</p>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('portal.simulator') }}" class="simulator-form">
+                <div class="form-row">
+                    <!-- Feature 1: Age -->
+                    <div class="form-group flex-1">
+                        <label for="inputAge">
+                            <strong>1. Patient Age:</strong> <span id="valAge">{{ form_data.age }}</span> yrs
+                        </label>
+                        <input type="range" id="inputAge" name="age" class="form-range" min="18" max="95" value="{{ form_data.age }}" oninput="document.getElementById('valAge').innerText = this.value;">
+                        <span class="text-muted small">Range: 18 - 95 years</span>
+                    </div>
+
+                    <!-- Feature 2: Past Missed Doses -->
+                    <div class="form-group flex-1">
+                        <label for="inputMissedDoses">
+                            <strong>2. Past Missed Doses:</strong> <span id="valDoses">{{ form_data.past_missed_doses }}</span> doses
+                        </label>
+                        <input type="range" id="inputMissedDoses" name="past_missed_doses" class="form-range" min="0" max="15" value="{{ form_data.past_missed_doses }}" oninput="document.getElementById('valDoses').innerText = this.value;">
+                        <span class="text-muted small">Past 30-day recorded non-adherence</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <!-- Feature 3: Past Missed Appointments -->
+                    <div class="form-group flex-1">
+                        <label for="inputMissedAppts">
+                            <strong>3. Missed Appointments:</strong> <span id="valAppts">{{ form_data.past_missed_appointments }}</span> visits
+                        </label>
+                        <input type="range" id="inputMissedAppts" name="past_missed_appointments" class="form-range" min="0" max="5" value="{{ form_data.past_missed_appointments }}" oninput="document.getElementById('valAppts').innerText = this.value;">
+                        <span class="text-muted small">Follow-up appointments missed in last 6 months</span>
+                    </div>
+
+                    <!-- Feature 4: Number of Medications -->
+                    <div class="form-group flex-1">
+                        <label for="inputNumMeds">
+                            <strong>4. Polypharmacy (Medications):</strong> <span id="valMeds">{{ form_data.num_medications }}</span> meds
+                        </label>
+                        <input type="range" id="inputNumMeds" name="num_medications" class="form-range" min="1" max="9" value="{{ form_data.num_medications }}" oninput="document.getElementById('valMeds').innerText = this.value;">
+                        <span class="text-muted small">Number of concurrent active prescriptions</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="inputDuration">
+                        <strong>5. Treatment Duration:</strong> <span id="valDur">{{ form_data.treatment_duration_days }}</span> days
+                    </label>
+                    <input type="range" id="inputDuration" name="treatment_duration_days" class="form-range" min="7" max="365" step="7" value="{{ form_data.treatment_duration_days }}" oninput="document.getElementById('valDur').innerText = this.value;">
+                    <span class="text-muted small">Total prescribed regimen duration (7 to 365 days)</span>
+                </div>
+
+                <div class="form-actions mt-3">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        Run Predictive ML Inference &rarr;
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Simulator Results Side Panel -->
+    <div class="content-column side-col">
+        <div class="panel-card result-panel">
+            <div class="panel-header">
+                <h2>Predictive Classification Result</h2>
+            </div>
+
+            {% if result %}
+                <div class="sim-result-box result-{{ result.risk_level|lower }}">
+                    <div class="sim-result-badge">
+                        {{ result.risk_level }} Risk
+                    </div>
+                    <div class="sim-confidence">
+                        Model Confidence: <strong>{{ result.confidence }}%</strong>
+                    </div>
+
+                    <!-- Probability Bars -->
+                    <div class="prob-bars-container mt-3">
+                        <div class="prob-item">
+                            <div class="prob-label"><span>Low Risk</span> <span>{{ (result.probabilities.Low * 100)|round(1) }}%</span></div>
+                            <div class="prob-track"><div class="prob-fill bg-emerald" style="width: {{ result.probabilities.Low * 100 }}%;"></div></div>
+                        </div>
+                        <div class="prob-item">
+                            <div class="prob-label"><span>Medium Risk</span> <span>{{ (result.probabilities.Medium * 100)|round(1) }}%</span></div>
+                            <div class="prob-track"><div class="prob-fill bg-amber" style="width: {{ result.probabilities.Medium * 100 }}%;"></div></div>
+                        </div>
+                        <div class="prob-item">
+                            <div class="prob-label"><span>High Risk</span> <span>{{ (result.probabilities.High * 100)|round(1) }}%</span></div>
+                            <div class="prob-track"><div class="prob-fill bg-rose" style="width: {{ result.probabilities.High * 100 }}%;"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="sim-recs mt-3">
+                        <strong>Clinical Intervention Protocol:</strong>
+                        <p class="mt-1 small">{{ result.recommendations }}</p>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>Adjust inputs on the left and click <strong>Run Predictive ML Inference</strong> to see real-time classification results.</p>
+                </div>
+            {% endif %}
+
+            <div class="model-info-footer mt-3">
+                <span class="text-muted small"><strong>Algorithm:</strong> Scikit-Learn RandomForestClassifier (120 Estimators, Class Balanced)</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

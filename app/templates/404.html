@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Resource Not Found | HealthGuard{% endblock %}
+
+{% block content %}
+<div class="empty-state py-5 text-center">
+    <div class="kpi-value text-rose" style="font-size: 4rem;">404</div>
+    <h2>Clinical Resource Not Found</h2>
+    <p class="text-muted mt-2">{{ message or 'The patient record, doctor profile, or API endpoint you requested does not exist.' }}</p>
+    <div class="mt-4">
+        <a href="{{ url_for('portal.index') }}" class="btn btn-primary">&larr; Return to HealthGuard Overview</a>
+    </div>
+</div>
+{% endblock %}

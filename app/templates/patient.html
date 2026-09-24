@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Portal - {{ patient.name }} | HealthGuard{% endblock %}
+
+{% block content %}
+<div class="portal-header-bar">
+    <div>
+        <div class="breadcrumb">Portals / Patient Portal / ID #{{ patient.id }}</div>
+        <h1 class="page-title">{{ patient.name }}</h1>
+        <div class="patient-tags">
+            <span class="tag-pill">{{ patient.gender }}, {{ patient.age }} yrs</span>
+            <span class="tag-pill">Conditions: {{ patient.chronic_conditions }}</span>
+            <span class="tag-pill">Physician: {{ patient.doctor_name }} ({{ patient.doctor_specialty }})</span>
+        </div>
+    </div>
+    
+    <!-- Patient switcher -->
+    <div class="quick-switcher">
+        <label for="switchPat">Switch Patient:</label>
+        <select id="switchPat" class="form-select" onchange="window.location.href='/patient/' + this.value;">
+            {% for p in all_patients %}
+                <option value="{{ p.id }}" {% if p.id == patient.id %}selected{% endif %}>
+                    {{ p.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Adherence Status Overview Cards -->
+<div class="dashboard-stats-grid">
+    <!-- Adherence Rate Card -->
+    <div class="stat-card">
+        <div class="stat-title">Overall Adherence Rate</div>
+        <div class="stat-main">
+            <div class="stat-num text-{% if adherence_rate >= 80 %}emerald{% elif adherence_rate >= 60 %}amber{% else %}rose{% endif %}">
+                <span id="adherenceRateValue">{{ adherence_rate }}</span>%
+            </div>
+            <div class="stat-badge badge-{% if adherence_rate >= 80 %}success{% elif adherence_rate >= 60 %}warning{% else %}danger{% endif %}">
+                {% if adherence_rate >= 80 %}Optimal Compliance{% elif adherence_rate >= 60 %}Moderate Risk{% else %}Action Required{% endif %}
+            </div>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill bg-{% if adherence_rate >= 80 %}emerald{% elif adherence_rate >= 60 %}amber{% else %}rose{% endif %}" 
+                 id="adherenceProgressBar"
+                 style="width: {{ adherence_rate }}%;"></div>
+        </div>
+        <div class="stat-subtext">
+            <span id="countTaken">{{ stats.taken or 0 }}</span> Taken &bull; 
+            <span id="countMissed">{{ stats.missed or 0 }}</span> Missed &bull; 
+            <span>{{ stats.total or 0 }}</span> Total Logged
+        </div>
+    </div>
+
+    <!-- ML Risk Assessment Card -->
+    <div class="stat-card">
+        <div class="stat-title">Predictive Risk Level (AI Random Forest)</div>
+        <div class="stat-main">
+            <div class="stat-num text-{% if risk_assessment.risk_level == 'High' %}rose{% elif risk_assessment.risk_level == 'Medium' %}amber{% else %}emerald{% endif %}" id="patientRiskTier">
+                {{ risk_assessment.risk_level if risk_assessment else 'Low' }} Risk
+            </div>
+            <div class="stat-badge badge-neutral">
+                Confidence: <span id="patientRiskScore">{{ risk_assessment.risk_score if risk_assessment else 95.0 }}</span>%
+            </div>
+        </div>
+        <p class="stat-subtext text-muted" id="patientRiskRecs">
+            {{ risk_assessment.recommendations if risk_assessment else 'Maintain standard schedule and continue daily adherence tracking.' }}
+        </p>
+    </div>
+
+    <!-- Assigned Doctor Contact Card -->
+    <div class="stat-card">
+        <div class="stat-title">Assigned Clinical Specialist</div>
+        <div class="doctor-contact-box">
+            <div class="doc-avatar">
+                {{ patient.doctor_name[4:6] if patient.doctor_name else 'DR' }}
+            </div>
+            <div class="doc-info">
+                <h4>{{ patient.doctor_name }}</h4>
+                <div class="doc-sub">{{ patient.doctor_specialty }}</div>
+                <div class="doc-email text-muted small">{{ patient.doctor_email }}</div>
+            </div>
+        </div>
+        <div class="stat-subtext text-right mt-2">
+            <a href="tel:{{ patient.doctor_phone }}" class="btn-sm-action">Call Clinic: {{ patient.doctor_phone }}</a>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="two-column-layout">
+    <!-- Prescriptions and Daily Intake Tracker -->
+    <div class="content-column main-col">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <div class="panel-icon bg-indigo">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+                            <path d="m8.5 8.5 7 7"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2>Today's Medication Schedule &amp; Intake Tracker</h2>
+                        <p class="panel-subtitle">Mark medications as taken or missed for today ({{ today_date }}).</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if prescriptions %}
+                <div class="prescriptions-list">
+                    {% for rx in prescriptions %}
+                        <div class="prescription-item {% if rx.status != 'Active' %}rx-inactive{% endif %}" id="rxCard-{{ rx.id }}">
+                            <div class="rx-header">
+                                <div class="rx-name-group">
+                                    <span class="rx-status-dot {% if rx.status == 'Active' %}dot-active{% else %}dot-inactive{% endif %}"></span>
+                                    <h3 class="rx-name">{{ rx.medication_name }} <span class="rx-dosage">{{ rx.dosage }}</span></h3>
+                                </div>
+                                <span class="badge-status-{{ rx.status|lower }}">{{ rx.status }}</span>
+                            </div>
+
+                            <div class="rx-details-grid">
+                                <div><strong>Frequency:</strong> {{ rx.frequency }}</div>
+                                <div><strong>Duration:</strong> {{ rx.treatment_duration_days }} days</div>
+                                <div><strong>Instructions:</strong> {{ rx.instructions or 'Take as directed.' }}</div>
+                                <div><strong>Period:</strong> {{ rx.start_date }} &rarr; {{ rx.end_date }}</div>
+                            </div>
+
+                            <!-- Intake action controls -->
+                            {% if rx.status == 'Active' %}
+                                <div class="intake-actions-bar" id="intakeBar-{{ rx.id }}">
+                                    <div class="intake-status-indicator">
+                                        <span class="text-muted small">Status for Today:</span>
+                                        {% if logged_rx_today.get(rx.id) == 'Taken' %}
+                                            <span class="badge-dose badge-taken" id="statusBadge-{{ rx.id }}">✅ Taken Today</span>
+                                        {% elif logged_rx_today.get(rx.id) == 'Missed' %}
+                                            <span class="badge-dose badge-missed" id="statusBadge-{{ rx.id }}">❌ Missed Today</span>
+                                        {% elif logged_rx_today.get(rx.id) == 'Late' %}
+                                            <span class="badge-dose badge-late" id="statusBadge-{{ rx.id }}">⚠️ Logged Late</span>
+                                        {% else %}
+                                            <span class="badge-dose badge-pending" id="statusBadge-{{ rx.id }}">⏳ Pending Intake</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="action-buttons-group">
+                                        <button class="btn btn-sm btn-success" 
+                                                onclick="logPatientDose({{ rx.id }}, {{ patient.id }}, 'Taken');">
+                                            Mark as Taken
+                                        </button>
+                                        <button class="btn btn-sm btn-danger-outline" 
+                                                onclick="logPatientDose({{ rx.id }}, {{ patient.id }}, 'Missed');">
+                                            Mark Missed
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>No prescriptions recorded for this patient.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Side Column: Follow-up Schedules -->
+    <div class="content-column side-col">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <div class="panel-icon bg-teal">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2>Follow-Up Appointments</h2>
+                        <p class="panel-subtitle">Upcoming clinical reviews</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if upcoming_followups %}
+                <div class="timeline-list">
+                    {% for fu in upcoming_followups %}
+                        <div class="timeline-item status-{{ fu.status|lower }}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <span class="timeline-date">{{ fu.appointment_date }}</span>
+                                    <span class="badge-fu badge-fu-{{ fu.status|lower }}">{{ fu.status }}</span>
+                                </div>
+                                <div class="timeline-notes">{{ fu.notes or 'Routine clinical evaluation' }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>No follow-up appointments scheduled.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

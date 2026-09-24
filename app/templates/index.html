@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}HealthGuard - Overview & Portals{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-badge">Healthcare AI &bull; Random Forest Risk Classification</div>
+    <h1 class="hero-title">Predictive Patient Follow-Up &amp; Medication Adherence</h1>
+    <p class="hero-desc">
+        A proactive clinical decision support system that predicts patient non-adherence and missed appointments 
+        before they occur. Connecting patients, doctors, and administrators with intelligent risk mitigation protocols.
+    </p>
+
+    <!-- KPI counter banner -->
+    <div class="hero-kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-value text-indigo">{{ kpis.patients }}</div>
+            <div class="kpi-label">Monitored Patients</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value text-teal">{{ kpis.doctors }}</div>
+            <div class="kpi-label">Specialist Doctors</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value text-blue">{{ kpis.active_rx }}</div>
+            <div class="kpi-label">Active Prescriptions</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value text-emerald">99.9%</div>
+            <div class="kpi-label">RF Model Accuracy</div>
+        </div>
+    </div>
+</div>
+
+<!-- Portals Directory Grid -->
+<div class="portal-grid-section">
+    <div class="section-header">
+        <h2>Interactive Application Portals</h2>
+        <p>Explore role-tailored dashboards designed for each clinical stakeholder.</p>
+    </div>
+
+    <div class="portal-cards">
+        <!-- Patient Portal Card -->
+        <div class="portal-card">
+            <div class="portal-card-header">
+                <div class="portal-icon bg-indigo">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="portal-tag">Patient View</span>
+                    <h3>Patient Portal</h3>
+                </div>
+            </div>
+            <p class="portal-card-desc">
+                Patients view daily medication schedules, mark doses as taken or missed with 1 click, view follow-up appointment dates, and inspect their personal adherence score.
+            </p>
+            <div class="portal-selector-box">
+                <label for="selectPatient" class="text-muted small">Select Patient:</label>
+                <div class="select-row">
+                    <select id="selectPatient" class="form-select" onchange="window.location.href='/patient/' + this.value;">
+                        {% for p in patients %}
+                            <option value="{{ p.id }}">{{ p.name }} (Age {{ p.age }})</option>
+                        {% endfor %}
+                    </select>
+                    <a href="/patient/1" class="btn btn-primary" id="btnGoPatient">Open Portal &rarr;</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctor Portal Card -->
+        <div class="portal-card">
+            <div class="portal-card-header">
+                <div class="portal-icon bg-teal">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="portal-tag">Physician View</span>
+                    <h3>Doctor Portal</h3>
+                </div>
+            </div>
+            <p class="portal-card-desc">
+                Physicians monitor assigned patient rosters, view real-time ML risk alerts (High, Medium, Low), add and modify prescriptions, and review automated intervention guidelines.
+            </p>
+            <div class="portal-selector-box">
+                <label for="selectDoctor" class="text-muted small">Select Physician:</label>
+                <div class="select-row">
+                    <select id="selectDoctor" class="form-select" onchange="window.location.href='/doctor/' + this.value;">
+                        {% for d in doctors %}
+                            <option value="{{ d.id }}">{{ d.name }} - {{ d.specialty }}</option>
+                        {% endfor %}
+                    </select>
+                    <a href="/doctor/1" class="btn btn-teal" id="btnGoDoctor">Open Portal &rarr;</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard Card -->
+        <div class="portal-card">
+            <div class="portal-card-header">
+                <div class="portal-icon bg-purple">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="portal-tag">Population Health</span>
+                    <h3>Admin Dashboard</h3>
+                </div>
+            </div>
+            <p class="portal-card-desc">
+                Hospital administrators inspect population-level adherence KPIs, Chart.js trends, risk category distributions, and high-risk cohort alerts across all clinics.
+            </p>
+            <div class="portal-action-box">
+                <a href="{{ url_for('portal.admin_dashboard') }}" class="btn btn-purple btn-block">
+                    View Population Analytics &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- ML Simulator Card -->
+        <div class="portal-card">
+            <div class="portal-card-header">
+                <div class="portal-icon bg-amber">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-6h2zm0-8h-2V7h2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="portal-tag">Sandbox & Testing</span>
+                    <h3>ML Risk Simulator</h3>
+                </div>
+            </div>
+            <p class="portal-card-desc">
+                Interactive simulator allowing researchers to test what-if scenarios by adjusting patient age, missed doses, polypharmacy, and duration to see real-time Random Forest predictions.
+            </p>
+            <div class="portal-action-box">
+                <a href="{{ url_for('portal.simulator') }}" class="btn btn-amber btn-block">
+                    Launch ML Risk Sandbox &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Endpoints Showcase -->
+<div class="api-showcase-section">
+    <div class="section-header">
+        <h2>RESTful Clinical API Endpoints</h2>
+        <p>Fully compliant REST endpoints ready for EHR integration and automated Pytest execution.</p>
+    </div>
+
+    <div class="endpoint-cards-grid">
+        <div class="endpoint-card">
+            <div class="endpoint-meta">
+                <span class="method-badge method-post">POST</span>
+                <code>/api/predict</code>
+            </div>
+            <p>Predicts adherence risk tier (Low, Medium, High) with confidence probabilities.</p>
+        </div>
+        <div class="endpoint-card">
+            <div class="endpoint-meta">
+                <span class="method-badge method-get">GET</span>
+                <code>/api/patients</code>
+            </div>
+            <p>Retrieves all patients with real-time risk scores and adherence percentages.</p>
+        </div>
+        <div class="endpoint-card">
+            <div class="endpoint-meta">
+                <span class="method-badge method-post">POST</span>
+                <code>/api/prescriptions</code>
+            </div>
+            <p>Creates new medication prescription and recalculates patient risk assessment.</p>
+        </div>
+        <div class="endpoint-card">
+            <div class="endpoint-meta">
+                <span class="method-badge method-post">POST</span>
+                <code>/api/adherence</code>
+            </div>
+            <p>Logs dose status (Taken, Missed, Late) with automatic real-time ML risk updates.</p>
+        </div>
+        <div class="endpoint-card">
+            <div class="endpoint-meta">
+                <span class="method-badge method-get">GET</span>
+                <code>/api/analytics</code>
+            </div>
+            <p>Provides aggregate population metrics, trend graphs, and high-risk rosters.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

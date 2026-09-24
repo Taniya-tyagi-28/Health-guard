@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: healthguard-backend
+    env: python
+    buildCommand: "pip install -r requirements.txt && python ml/train_model.py && python database/seed_data.py"
+    startCommand: "gunicorn \"app:create_app()\" --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
