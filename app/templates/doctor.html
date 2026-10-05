@@ -26,6 +26,9 @@
                 {% endfor %}
             </select>
         </div>
+        <a href="{{ url_for('portal.add_data_portal', tab='patient') }}" class="btn btn-outline">
+            + Add Patient
+        </a>
         <button class="btn btn-primary" onclick="openAddRxModal();">
             + Add Prescription
         </button>

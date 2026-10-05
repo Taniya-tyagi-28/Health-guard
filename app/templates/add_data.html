@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Clinical Data & Records | HealthGuard{% endblock %}
+
+{% block content %}
+<div class="portal-header-bar">
+    <div>
+        <div class="breadcrumb">Data Management / Clinical Record Intake</div>
+        <h1 class="page-title">Add Clinical Data &amp; Patient Records</h1>
+        <p class="text-muted">Register new patients, prescribe medications, schedule appointments, or onboard physicians with automated ML risk calculations.</p>
+    </div>
+
+    <div class="header-actions-group">
+        <a href="{{ url_for('portal.index') }}" class="btn btn-outline">
+            &larr; Return to Portals
+        </a>
+    </div>
+</div>
+
+<!-- Data Intake Nav Tabs -->
+<div class="data-tabs-bar">
+    <button class="tab-btn {% if active_tab == 'patient' %}active{% endif %}" onclick="switchTab('tab-patient', this)" id="tabBtnPatient">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span>+ Add Patient</span>
+    </button>
+    <button class="tab-btn {% if active_tab == 'prescription' %}active{% endif %}" onclick="switchTab('tab-prescription', this)" id="tabBtnPrescription">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>
+        </svg>
+        <span>+ Add Prescription</span>
+    </button>
+    <button class="tab-btn {% if active_tab == 'followup' %}active{% endif %}" onclick="switchTab('tab-followup', this)" id="tabBtnFollowup">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span>+ Schedule Appointment</span>
+    </button>
+    <button class="tab-btn {% if active_tab == 'doctor' %}active{% endif %}" onclick="switchTab('tab-doctor', this)" id="tabBtnDoctor">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+        <span>+ Onboard Physician</span>
+    </button>
+    <button class="tab-btn {% if active_tab == 'adherence' %}active{% endif %}" onclick="switchTab('tab-adherence', this)" id="tabBtnAdherence">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span>+ Log Dose Intake</span>
+    </button>
+</div>
+
+<!-- ============================================================== -->
+<!-- TAB 1: ADD PATIENT -->
+<!-- ============================================================== -->
+<div id="tab-patient" class="tab-pane-card {% if active_tab == 'patient' %}active{% endif %}">
+    <div class="panel-card">
+        <div class="panel-header">
+            <div class="panel-title-group">
+                <div class="panel-icon bg-indigo">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Register New Patient</h2>
+                    <p class="panel-subtitle">Creates patient profile and automatically generates an initial Random Forest adherence risk baseline</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('portal.add_data_portal') }}" id="formAddPatient" class="data-entry-form">
+            <input type="hidden" name="action" value="add_patient">
+            
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="patientName">Full Name *</label>
+                    <input type="text" id="patientName" name="name" class="form-input" placeholder="e.g. Eleanor Vance" required>
+                </div>
+                <div class="form-group" style="width: 140px;">
+                    <label for="patientAge">Age (Years) *</label>
+                    <input type="number" id="patientAge" name="age" class="form-input" min="0" max="125" value="58" required>
+                </div>
+                <div class="form-group" style="width: 160px;">
+                    <label for="patientGender">Gender</label>
+                    <select id="patientGender" name="gender" class="form-select">
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="patientEmail">Email Address</label>
+                    <input type="email" id="patientEmail" name="email" class="form-input" placeholder="e.g. e.vance@example.com">
+                </div>
+                <div class="form-group flex-1">
+                    <label for="patientPhone">Contact Phone</label>
+                    <input type="tel" id="patientPhone" name="phone" class="form-input" placeholder="e.g. +1-555-0199">
+                </div>
+                <div class="form-group flex-1">
+                    <label for="patientDoctorId">Attending Physician *</label>
+                    <select id="patientDoctorId" name="doctor_id" class="form-select" required>
+                        {% for d in doctors %}
+                            <option value="{{ d.id }}">{{ d.name }} ({{ d.specialty }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="patientConditions">Chronic Conditions &amp; Medical History</label>
+                <input type="text" id="patientConditions" name="chronic_conditions" class="form-input" placeholder="e.g. Type 2 Diabetes, Hypertension, Dyslipidemia">
+                <span class="text-muted small">Separate multiple diagnoses with commas.</span>
+            </div>
+
+            <div class="form-notice">
+                <div class="pulse-dot"></div>
+                <span><strong>Automated ML Risk Assessment:</strong> HealthGuard will immediately analyze patient demographics against the trained Random Forest classifier to establish their risk category (Low, Medium, or High).</span>
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-primary" id="btnSubmitPatient">
+                    ✓ Register Patient &amp; Calculate Baseline Risk
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- TAB 2: ADD PRESCRIPTION -->
+<!-- ============================================================== -->
+<div id="tab-prescription" class="tab-pane-card {% if active_tab == 'prescription' %}active{% endif %}">
+    <div class="panel-card">
+        <div class="panel-header">
+            <div class="panel-title-group">
+                <div class="panel-icon bg-teal">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Prescribe Medication</h2>
+                    <p class="panel-subtitle">Adds active therapeutic prescription to a patient's regimen and triggers real-time polypharmacy risk re-evaluation</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('portal.add_data_portal') }}" id="formAddRx" class="data-entry-form">
+            <input type="hidden" name="action" value="add_prescription">
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="rxSelectPatient">Select Patient *</label>
+                    <select id="rxSelectPatient" name="patient_id" class="form-select" required>
+                        {% for p in patients %}
+                            <option value="{{ p.id }}">{{ p.name }} (ID #{{ p.id }} - Age {{ p.age }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group flex-1">
+                    <label for="rxSelectDoctor">Prescribing Physician *</label>
+                    <select id="rxSelectDoctor" name="doctor_id" class="form-select" required>
+                        {% for d in doctors %}
+                            <option value="{{ d.id }}">{{ d.name }} - {{ d.specialty }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="rxName">Medication Name *</label>
+                    <input type="text" id="rxName" name="medication_name" class="form-input" placeholder="e.g. Metformin ER" required>
+                </div>
+                <div class="form-group flex-1">
+                    <label for="rxDose">Dosage Strength *</label>
+                    <input type="text" id="rxDose" name="dosage" class="form-input" placeholder="e.g. 500mg or 10ml" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="rxFreq">Administration Frequency *</label>
+                    <select id="rxFreq" name="frequency" class="form-select" required>
+                        <option value="Once daily (Morning)">Once daily (Morning)</option>
+                        <option value="Once daily (Bedtime)">Once daily (Bedtime)</option>
+                        <option value="Twice daily (Morning/Evening)">Twice daily (Morning/Evening)</option>
+                        <option value="Three times daily">Three times daily</option>
+                        <option value="Every 4-6 hours PRN">Every 4-6 hours PRN</option>
+                        <option value="Weekly">Weekly</option>
+                    </select>
+                </div>
+                <div class="form-group" style="width: 180px;">
+                    <label for="rxDurationDays">Duration (Days) *</label>
+                    <input type="number" id="rxDurationDays" name="treatment_duration_days" class="form-input" min="1" max="365" value="30" required>
+                </div>
+                <div class="form-group" style="width: 180px;">
+                    <label for="rxStartDate">Start Date</label>
+                    <input type="date" id="rxStartDate" name="start_date" class="form-input" value="{{ today_date }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="rxInstr">Clinical Directions &amp; Food Guidance</label>
+                <textarea id="rxInstr" name="instructions" class="form-textarea" rows="2" placeholder="e.g. Take with food or immediately after breakfast. Do not crush or chew."></textarea>
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-teal" id="btnSubmitRx">
+                    ✓ Prescribe Medication &amp; Recalculate Risk
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- TAB 3: SCHEDULE APPOINTMENT -->
+<!-- ============================================================== -->
+<div id="tab-followup" class="tab-pane-card {% if active_tab == 'followup' %}active{% endif %}">
+    <div class="panel-card">
+        <div class="panel-header">
+            <div class="panel-title-group">
+                <div class="panel-icon bg-purple">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Schedule Clinical Follow-Up Appointment</h2>
+                    <p class="panel-subtitle">Book future outpatient appointments to prevent missed follow-ups</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('portal.add_data_portal') }}" id="formAddFollowUp" class="data-entry-form">
+            <input type="hidden" name="action" value="add_follow_up">
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="fuPatientId">Select Patient *</label>
+                    <select id="fuPatientId" name="patient_id" class="form-select" required>
+                        {% for p in patients %}
+                            <option value="{{ p.id }}">{{ p.name }} (ID #{{ p.id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group flex-1">
+                    <label for="fuDoctorId">Attending Physician *</label>
+                    <select id="fuDoctorId" name="doctor_id" class="form-select" required>
+                        {% for d in doctors %}
+                            <option value="{{ d.id }}">{{ d.name }} - {{ d.specialty }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="fuApptDate">Appointment Date &amp; Time *</label>
+                    <input type="datetime-local" id="fuApptDate" name="appointment_date" class="form-input" required>
+                </div>
+                <div class="form-group flex-1">
+                    <label for="fuNotes">Clinical Purpose / Reason for Visit</label>
+                    <input type="text" id="fuNotes" name="notes" class="form-input" placeholder="e.g. Routine 3-month lipid panel &amp; medication adherence check">
+                </div>
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-purple" id="btnSubmitFollowup">
+                    ✓ Confirm &amp; Schedule Appointment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- TAB 4: ONBOARD PHYSICIAN -->
+<!-- ============================================================== -->
+<div id="tab-doctor" class="tab-pane-card {% if active_tab == 'doctor' %}active{% endif %}">
+    <div class="panel-card">
+        <div class="panel-header">
+            <div class="panel-title-group">
+                <div class="panel-icon bg-amber">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Onboard Medical Specialist / Doctor</h2>
+                    <p class="panel-subtitle">Register a new physician who can manage patient rosters and issue medication regimens</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('portal.add_data_portal') }}" id="formAddDoctor" class="data-entry-form">
+            <input type="hidden" name="action" value="add_doctor">
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="docName">Physician Full Name *</label>
+                    <input type="text" id="docName" name="name" class="form-input" placeholder="e.g. Dr. Jennifer Adams, MD" required>
+                </div>
+                <div class="form-group flex-1">
+                    <label for="docSpecialty">Medical Specialty *</label>
+                    <select id="docSpecialty" name="specialty" class="form-select" required>
+                        <option value="Cardiology">Cardiology</option>
+                        <option value="Endocrinology">Endocrinology</option>
+                        <option value="Internal Medicine">Internal Medicine</option>
+                        <option value="Geriatrics">Geriatrics</option>
+                        <option value="Pulmonology">Pulmonology</option>
+                        <option value="Family Medicine">Family Medicine</option>
+                        <option value="Neurology">Neurology</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="docEmail">Hospital Email *</label>
+                    <input type="email" id="docEmail" name="email" class="form-input" placeholder="e.g. j.adams@hospital.org" required>
+                </div>
+                <div class="form-group flex-1">
+                    <label for="docPhone">Contact Phone</label>
+                    <input type="tel" id="docPhone" name="phone" class="form-input" placeholder="e.g. +1-555-4321">
+                </div>
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-amber" id="btnSubmitDoctor">
+                    ✓ Register Physician Profile
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- TAB 5: LOG MEDICATION DOSE -->
+<!-- ============================================================== -->
+<div id="tab-adherence" class="tab-pane-card {% if active_tab == 'adherence' %}active{% endif %}">
+    <div class="panel-card">
+        <div class="panel-header">
+            <div class="panel-title-group">
+                <div class="panel-icon bg-emerald">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Log Medication Adherence Dose</h2>
+                    <p class="panel-subtitle">Record dose intake (Taken, Missed, or Late) to immediately trigger ML risk re-evaluation</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('portal.add_data_portal') }}" id="formLogDose" class="data-entry-form">
+            <input type="hidden" name="action" value="log_dose">
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="logRxId">Select Active Prescription *</label>
+                    <select id="logRxId" name="prescription_id" class="form-select" required>
+                        {% for rx in prescriptions %}
+                            <option value="{{ rx.id }}">
+                                {{ rx.patient_name }}: {{ rx.medication_name }} {{ rx.dosage }} (Rx #{{ rx.id }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="width: 220px;">
+                    <label for="logStatus">Intake Status *</label>
+                    <select id="logStatus" name="status" class="form-select" required>
+                        <option value="Taken">✅ Taken On Time</option>
+                        <option value="Missed">❌ Missed Dose</option>
+                        <option value="Late">⚠️ Taken Late</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="logNotes">Patient / Intake Notes</label>
+                <input type="text" id="logNotes" name="notes" class="form-input" placeholder="e.g. Dose taken after morning meal with water">
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-success" id="btnSubmitDose">
+                    ✓ Log Dose &amp; Trigger ML Update
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchTab(tabId, btnElement) {
+    document.querySelectorAll('.tab-pane-card').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+    const target = document.getElementById(tabId);
+    if (target) {
+        target.classList.add('active');
+    }
+    if (btnElement) {
+        btnElement.classList.add('active');
+    }
+
+    // Set URL parameter without reloading
+    const tabName = tabId.replace('tab-', '');
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.replaceState({}, '', url);
+}
+
+// Set default datetime to now for appointment scheduler
+document.addEventListener('DOMContentLoaded', () => {
+    const apptInput = document.getElementById('fuApptDate');
+    if (apptInput && !apptInput.value) {
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        nextWeek.setHours(10, 0, 0, 0);
+        apptInput.value = nextWeek.toISOString().slice(0, 16);
+    }
+});
+</script>
+{% endblock %}

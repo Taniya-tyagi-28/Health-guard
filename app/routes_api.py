@@ -271,6 +271,218 @@ def get_patient_detail(patient_id: int):
     )
 
 
+@api_bp.route("/patients", methods=["POST"])
+def create_patient():
+    """
+    POST /api/patients
+    Registers a new patient and runs baseline ML adherence risk evaluation.
+    Payload: {
+        "name": str,
+        "age": int (0-125),
+        "gender": optional ("Male" | "Female" | "Other"),
+        "phone": optional str,
+        "email": optional str,
+        "chronic_conditions": optional str,
+        "doctor_id": optional int,
+        "past_missed_doses": optional int (default 0),
+        "past_missed_appointments": optional int (default 0)
+    }
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "JSON body is required"}), 400
+
+    name = data.get("name", "").strip() if isinstance(data.get("name"), str) else ""
+    if not name:
+        return jsonify({"error": "Patient name is required"}), 400
+
+    if "age" not in data or data["age"] is None:
+        return jsonify({"error": "Patient age is required"}), 400
+
+    try:
+        age = int(data["age"])
+        if age < 0 or age > 125:
+            return jsonify({"error": "Age must be between 0 and 125"}), 422
+    except (ValueError, TypeError):
+        return jsonify({"error": "Age must be a valid integer"}), 400
+
+    gender = data.get("gender", "Other")
+    if gender not in ["Male", "Female", "Other"]:
+        gender = "Other"
+
+    phone = data.get("phone", "").strip() if isinstance(data.get("phone"), str) else None
+    email = data.get("email", "").strip() if isinstance(data.get("email"), str) else None
+    if email == "":
+        email = None
+
+    if email:
+        existing = query_db("SELECT id FROM patients WHERE email = ?;", (email,), one=True)
+        if existing:
+            return jsonify({"error": f"A patient with email '{email}' already exists"}), 409
+
+    doctor_id = data.get("doctor_id")
+    if doctor_id:
+        doc = query_db("SELECT id FROM doctors WHERE id = ?;", (doctor_id,), one=True)
+        if not doc:
+            return jsonify({"error": f"Doctor with ID {doctor_id} not found"}), 404
+    else:
+        doc = query_db("SELECT id FROM doctors ORDER BY id ASC LIMIT 1;", one=True)
+        doctor_id = doc["id"] if doc else None
+
+    chronic_conditions = data.get("chronic_conditions", "").strip()
+
+    patient_id = execute_db(
+        """INSERT INTO patients (doctor_id, name, age, gender, phone, email, chronic_conditions)
+           VALUES (?, ?, ?, ?, ?, ?, ?);""",
+        (doctor_id, name, age, gender, phone, email, chronic_conditions),
+    )
+
+    # Initial baseline ML risk assessment
+    past_missed_doses = int(data.get("past_missed_doses", 0))
+    past_missed_appts = int(data.get("past_missed_appointments", 0))
+    try:
+        prediction = predict_adherence_risk(
+            age=age,
+            past_missed_doses=past_missed_doses,
+            past_missed_appointments=past_missed_appts,
+            treatment_duration_days=30,
+            num_medications=1,
+        )
+        execute_db(
+            """INSERT INTO risk_assessments (patient_id, risk_level, risk_score, features_json, recommendations)
+               VALUES (?, ?, ?, ?, ?);""",
+            (
+                patient_id,
+                prediction["risk_level"],
+                prediction["confidence"],
+                json.dumps(prediction["features"]),
+                prediction["recommendations"],
+            ),
+        )
+    except Exception:
+        prediction = None
+
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "message": f"Patient '{name}' created successfully",
+                "patient_id": patient_id,
+                "baseline_risk": prediction,
+            }
+        ),
+        201,
+    )
+
+
+@api_bp.route("/doctors", methods=["GET"])
+def get_doctors():
+    """GET /api/doctors: Returns list of all doctors."""
+    doctors = query_db("SELECT * FROM doctors ORDER BY name ASC;")
+    return jsonify({"doctors": doctors, "count": len(doctors)}), 200
+
+
+@api_bp.route("/doctors", methods=["POST"])
+def create_doctor():
+    """
+    POST /api/doctors
+    Registers a new physician profile.
+    Payload: {
+        "name": str,
+        "specialty": str,
+        "email": str,
+        "phone": optional str
+    }
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "JSON body is required"}), 400
+
+    name = data.get("name", "").strip() if isinstance(data.get("name"), str) else ""
+    specialty = data.get("specialty", "").strip() if isinstance(data.get("specialty"), str) else ""
+    email = data.get("email", "").strip() if isinstance(data.get("email"), str) else ""
+    phone = data.get("phone", "").strip() if isinstance(data.get("phone"), str) else None
+
+    if not name:
+        return jsonify({"error": "Doctor name is required"}), 400
+    if not specialty:
+        return jsonify({"error": "Specialty is required"}), 400
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    existing = query_db("SELECT id FROM doctors WHERE email = ?;", (email,), one=True)
+    if existing:
+        return jsonify({"error": f"Doctor with email '{email}' already exists"}), 409
+
+    doc_id = execute_db(
+        "INSERT INTO doctors (name, specialty, email, phone) VALUES (?, ?, ?, ?);",
+        (name, specialty, email, phone),
+    )
+
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "message": f"Doctor '{name}' registered successfully",
+                "doctor_id": doc_id,
+            }
+        ),
+        201,
+    )
+
+
+@api_bp.route("/follow-ups", methods=["POST"])
+def create_follow_up():
+    """
+    POST /api/follow-ups
+    Schedules a new clinical follow-up appointment.
+    Payload: {
+        "patient_id": int,
+        "doctor_id": int,
+        "appointment_date": str,
+        "notes": optional str,
+        "status": optional str
+    }
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "JSON body is required"}), 400
+
+    patient_id = data.get("patient_id")
+    doctor_id = data.get("doctor_id")
+    appt_date = data.get("appointment_date")
+    notes = data.get("notes", "").strip() if isinstance(data.get("notes"), str) else ""
+    status = data.get("status", "Scheduled")
+
+    if not patient_id or not doctor_id or not appt_date:
+        return jsonify({"error": "patient_id, doctor_id, and appointment_date are required"}), 400
+
+    p = query_db("SELECT id FROM patients WHERE id = ?;", (patient_id,), one=True)
+    if not p:
+        return jsonify({"error": f"Patient #{patient_id} not found"}), 404
+
+    d = query_db("SELECT id FROM doctors WHERE id = ?;", (doctor_id,), one=True)
+    if not d:
+        return jsonify({"error": f"Doctor #{doctor_id} not found"}), 404
+
+    fu_id = execute_db(
+        """INSERT INTO follow_up_schedules (patient_id, doctor_id, appointment_date, status, notes)
+           VALUES (?, ?, ?, ?, ?);""",
+        (patient_id, doctor_id, appt_date, status, notes),
+    )
+
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "message": "Follow-up appointment scheduled successfully",
+                "schedule_id": fu_id,
+            }
+        ),
+        201,
+    )
+
+
 @api_bp.route("/prescriptions", methods=["POST"])
 def create_prescription():
     """

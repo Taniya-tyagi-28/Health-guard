@@ -34,6 +34,7 @@ p/
 │       ├── doctor.html         # Doctor Portal: patient roster, ML risk alert badges, Add Rx modal
 │       ├── admin.html          # Admin Dashboard: population KPIs, Chart.js trends, high-risk queue
 │       ├── simulator.html      # Interactive ML risk sandbox for clinicians
+│       ├── add_data.html       # Clinical Record Intake Hub: register patients, Rx, appts, physicians
 │       └── 404.html            # Error page
 ├── tests/
 │   ├── __init__.py
@@ -73,19 +74,30 @@ p/
   - **`High`**: Critical non-adherence $\rightarrow$ immediate care coordination outreach & regimen review.
 
 ### 3. Application Portals
-- **Patient Portal (`/patient/<id>`)**: View active prescriptions, mark today's dose as "Taken" or "Missed" with 1-click instant updates, inspect real-time adherence percentage, and check upcoming appointment dates.
-- **Doctor Portal (`/doctor/<id>`)**: Inspect assigned patient roster, view real-time ML risk badges, filter by risk level, and prescribe new medications via modal dialog.
+- **Platform Overview (`/`)**: Main system landing page displaying population KPIs, active physicians, monitored patients, and direct portal navigation.
+- **Add Clinical Data Hub (`/add-data`)**: Multi-tabbed clinical data entry interface:
+  - **👤 Add Patient**: Registers patient details (age, gender, chronic conditions, attending doctor) and instantly executes the Random Forest model to compute a baseline risk tier (`Low`, `Medium`, `High`).
+  - **💊 Add Prescription**: Prescribes new medications with dosages, frequencies, and durations, triggering real-time risk re-evaluation.
+  - **📅 Schedule Follow-Up**: Books future outpatient clinical visits in `follow_up_schedules`.
+  - **👨‍⚕️ Onboard Physician**: Registers new medical specialists (Cardiology, Endocrinology, Geriatrics, etc.).
+  - **📋 Log Dose Intake**: Records medication adherence (`Taken`, `Missed`, `Late`) to update adherence meters.
+- **Patient Portal (`/patient/<id>`)**: Patient-facing dashboard to view daily medication regimens, log today's dose with 1 click, inspect real-time adherence percentage, and check upcoming appointment dates.
+- **Doctor Portal (`/doctor/<id>`)**: Physician dashboard to review assigned patient rosters, inspect real-time ML risk badges, filter patients by risk level, prescribe new medications, and register new patients.
 - **Admin Dashboard (`/admin`)**: Population-wide adherence metrics, Chart.js weekly adherence trend line chart, risk distribution donut chart, and high-risk patient intervention queue.
-- **ML Simulator (`/simulator`)**: Interactive sandbox for researchers to simulate what-if scenarios across all 5 features.
+- **ML Simulator (`/simulator`)**: Interactive sandbox for researchers to simulate what-if scenarios across all 5 features and inspect prediction confidence.
 
 ### 4. RESTful API Endpoints
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/predict` | Evaluates ML adherence risk for given patient features. |
 | `GET` | `/api/patients` | Retrieves all patients with real-time risk scores and adherence rates. |
+| `POST` | `/api/patients` | Registers new patient and calculates initial ML risk assessment baseline. |
 | `GET` | `/api/patients/<id>` | Comprehensive patient profile with prescriptions and adherence history. |
+| `GET` | `/api/doctors` | Retrieves all registered medical specialists. |
+| `POST` | `/api/doctors` | Registers a new physician profile. |
 | `POST` | `/api/prescriptions` | Creates a new prescription and triggers risk recalculation. |
 | `PUT` | `/api/prescriptions/<id>` | Updates prescription status (`Active`, `Completed`, `Discontinued`). |
+| `POST` | `/api/follow-ups` | Schedules a new clinical follow-up appointment. |
 | `POST` | `/api/adherence` | Logs medication intake (`Taken`, `Missed`, `Late`) and updates patient risk. |
 | `GET` | `/api/analytics` | Returns aggregate population metrics and trend series. |
 
@@ -94,13 +106,13 @@ p/
 ## Getting Started
 
 ### 1. Installation
-Ensure Python 3.10+ is installed:
+Clone the repository and ensure Python 3.10+ is installed:
 ```powershell
 pip install -r requirements.txt
 ```
 
 ### 2. Train the ML Model
-Train the Random Forest model and generate `ml/healthguard_model.joblib`:
+Train the Random Forest classifier and serialize `ml/healthguard_model.joblib`:
 ```powershell
 python ml/train_model.py
 ```
@@ -116,30 +128,60 @@ Start the Flask application:
 ```powershell
 python app.py
 ```
-Open your browser at:
+
+> [!NOTE]
+> **Important Note for GitHub Visitors:**
+> `127.0.0.1` refers to your **local machine** (`localhost`). The links below will open in your browser **after** you start the application locally with `python app.py`. Clicking these links on GitHub without running the server locally will result in `127.0.0.1 refused to connect (ERR_CONNECTION_REFUSED)`.
+
+Once the server is running, open your browser at:
 - **Platform Overview**: [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
+- **Unified Login Portal**: [http://127.0.0.1:5000/login](http://127.0.0.1:5000/login)
+- **Add Clinical Data**: [http://127.0.0.1:5000/add-data](http://127.0.0.1:5000/add-data)
 - **Patient Portal**: [http://127.0.0.1:5000/patient/1](http://127.0.0.1:5000/patient/1)
 - **Doctor Portal**: [http://127.0.0.1:5000/doctor/1](http://127.0.0.1:5000/doctor/1)
 - **Admin Dashboard**: [http://127.0.0.1:5000/admin](http://127.0.0.1:5000/admin)
 - **ML Simulator**: [http://127.0.0.1:5000/simulator](http://127.0.0.1:5000/simulator)
 
+#### Quick Demo Login Credentials:
+- **Physician**: `s.jenkins@healthguard.org` / `doctor123`
+- **Patient**: `arthur.p@example.com` / `patient123`
+- **Administrator**: `admin@healthguard.org` / `admin123`
+
 ### 5. (Optional) Run the Streamlit Companion App
-To explore the Streamlit interface:
+To explore the interactive Streamlit interface (includes Admin Dashboard, Doctor Portal, Patient Portal, ML Simulator, and Data Entry):
 ```powershell
 streamlit run streamlit_app.py
 ```
 
 ---
 
+## Deployment (Online Hosting)
+
+To make HealthGuard accessible publicly on the web (instead of `127.0.0.1`), deploy it to a cloud provider:
+
+- **Render**: The repository includes [render.yaml](render.yaml) configured with:
+  ```yaml
+  buildCommand: "pip install -r requirements.txt && python ml/train_model.py && python database/seed_data.py"
+  startCommand: "gunicorn \"app:create_app()\" --bind 0.0.0.0:$PORT"
+  ```
+- **Heroku / Railway**: Uses the included [Procfile](Procfile) (`web: gunicorn "app:create_app()"`).
+
+Once deployed online, replace `http://127.0.0.1:5000` links with your deployed URL (e.g. `https://healthguard.onrender.com`).
+
+---
+
 ## Running the Automated Test Suite
 
-HealthGuard includes a dedicated `tests/` directory with 36 comprehensive tests covering:
-- **Unit & Functional Tests**: ML input validation, feature boundaries, and classification output.
-- **REST API Tests**: Predict, Patients, Prescriptions, Adherence, and Analytics endpoints.
-- **Database Integrity Tests**: Foreign key constraints, check constraints, cascade deletions, and log persistence.
+HealthGuard includes a dedicated `tests/` directory with 52 comprehensive tests covering:
+- **Authentication & RBAC Tests**: User verification, password hashing, role-based redirection, registration, and session management (`tests/test_auth.py`).
+- **Unit & Functional Tests**: ML input validation, feature boundaries, and classification output (`tests/test_models_and_validation.py`).
+- **REST API Tests**: Predict, Patients, Doctors, Follow-Ups, Prescriptions, Adherence, and Analytics endpoints (`tests/test_api.py`).
+- **Database Integrity Tests**: Foreign key constraints, check constraints, cascade deletions, and log persistence (`tests/test_database_integrity.py`).
 
 Run the test suite with:
 ```powershell
 pytest -v
 ```
-All 36 tests execute against isolated temporary SQLite databases and pass cleanly.
+All 52 tests execute against isolated temporary SQLite databases and pass cleanly.
+
+

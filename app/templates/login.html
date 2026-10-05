@@ -1,0 +1,606 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - HealthGuard Clinical Intelligence{% endblock %}
+
+{% block content %}
+<div class="auth-page-wrapper">
+    <!-- Ambient Background Glows -->
+    <div class="auth-ambient-glow auth-glow-1"></div>
+    <div class="auth-ambient-glow auth-glow-2"></div>
+
+    <div class="auth-container">
+        <!-- Left Side: Platform Intelligence Showcase -->
+        <div class="auth-showcase-panel">
+            <div class="auth-brand-badge">
+                <span class="pulse-dot"></span>
+                <span>Clinical Decision Support Platform</span>
+            </div>
+
+            <h1 class="auth-showcase-title">
+                Intelligent Follow-Up &amp; Predictive Patient Care
+            </h1>
+            <p class="auth-showcase-desc">
+                HealthGuard connects patients, clinicians, and hospital leadership through real-time machine learning risk stratification to prevent medication non-adherence and missed appointments.
+            </p>
+
+            <!-- Feature Highlights Cards -->
+            <div class="auth-features-list">
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon icon-teal">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </div>
+                    <div class="auth-feature-content">
+                        <h4>Real-Time Risk Stratification</h4>
+                        <p>Scikit-Learn Random Forest model dynamically predicts adherence risk (Low, Medium, High) with 99.9% accuracy.</p>
+                    </div>
+                </div>
+
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon icon-indigo">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                    </div>
+                    <div class="auth-feature-content">
+                        <h4>Role-Based Clinical Security</h4>
+                        <p>Segregated, HIPAA-aligned portals tailored for Physicians, Monitored Patients, and Medical Directors.</p>
+                    </div>
+                </div>
+
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon icon-purple">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                    <div class="auth-feature-content">
+                        <h4>Proactive Care Interventions</h4>
+                        <p>Automated reminders, 1-click dose tracking, and clinician alerts before adherence lapses occur.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metric Stats Row -->
+            <div class="auth-stats-strip">
+                <div class="auth-stat-col">
+                    <span class="auth-stat-num text-teal">99.9%</span>
+                    <span class="auth-stat-lbl">Model Precision</span>
+                </div>
+                <div class="auth-stat-divider"></div>
+                <div class="auth-stat-col">
+                    <span class="auth-stat-num text-indigo">3 Roles</span>
+                    <span class="auth-stat-lbl">Doctor, Patient, Admin</span>
+                </div>
+                <div class="auth-stat-divider"></div>
+                <div class="auth-stat-col">
+                    <span class="auth-stat-num text-emerald">&lt;10ms</span>
+                    <span class="auth-stat-lbl">Inference Latency</span>
+                </div>
+            </div>
+
+            <div class="auth-compliance-footer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>HIPAA-Ready Role Access &bull; 256-Bit TLS &bull; SQLite Verified</span>
+            </div>
+        </div>
+
+        <!-- Right Side: Authentication Hub -->
+        <div class="auth-card-panel">
+            <div class="auth-card-glass">
+
+                {% if current_user %}
+                <!-- Already Logged In Session Notification -->
+                <div class="session-active-card">
+                    <div class="session-active-header">
+                        <span class="pulse-dot"></span>
+                        <span class="session-active-title">Active Session Detected</span>
+                    </div>
+                    <p class="session-active-info">
+                        You are currently authenticated as <strong>{{ current_user.full_name }}</strong> ({{ current_user.role|capitalize }}).
+                    </p>
+                    <div class="session-active-actions">
+                        {% if current_user.role == 'doctor' %}
+                            <a href="{{ url_for('portal.doctor_portal', doctor_id=current_user.doctor_id or 1) }}" class="btn btn-teal btn-sm" id="btnContinueDoctor">
+                                Go to Doctor Portal &rarr;
+                            </a>
+                        {% elif current_user.role == 'patient' %}
+                            <a href="{{ url_for('portal.patient_portal', patient_id=current_user.patient_id or 1) }}" class="btn btn-primary btn-sm" id="btnContinuePatient">
+                                Go to Patient Portal &rarr;
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('portal.admin_dashboard') }}" class="btn btn-purple btn-sm" id="btnContinueAdmin">
+                                Go to Admin Analytics &rarr;
+                            </a>
+                        {% endif %}
+                        <a href="{{ url_for('portal.logout') }}" class="btn btn-outline-danger btn-sm" id="btnSignOutExisting">
+                            Sign Out
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Top Mode Navigation: Sign In vs Register -->
+                <div class="auth-mode-tabs">
+                    <button type="button" class="auth-mode-tab {% if action != 'register' %}active{% endif %}" id="tabBtnSignIn" onclick="switchAuthMode('login')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        Sign In
+                    </button>
+                    <button type="button" class="auth-mode-tab {% if action == 'register' %}active{% endif %}" id="tabBtnRegister" onclick="switchAuthMode('register')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="8.5" cy="7" r="4"/>
+                            <line x1="20" y1="8" x2="20" y2="14"/>
+                            <line x1="23" y1="11" x2="17" y2="11"/>
+                        </svg>
+                        Create Account
+                    </button>
+                </div>
+
+                <!-- SIGN IN FORM SECTION -->
+                <div id="sectionSignIn" style="{% if action == 'register' %}display: none;{% endif %}">
+                    <div class="auth-header">
+                        <h2>Welcome to HealthGuard</h2>
+                        <p class="auth-subtitle">Select your clinical role or choose a 1-click demo account below.</p>
+                    </div>
+
+                    <!-- Role Switcher Pills -->
+                    <div class="role-selector-wrapper">
+                        <label class="form-label-small">Select Access Tier:</label>
+                        <div class="role-pills-group" id="rolePillsGroup">
+                            <button type="button" class="role-pill-btn {% if active_role == 'doctor' %}active{% endif %}" data-role="doctor" onclick="selectRole('doctor')">
+                                <span class="role-icon">🩺</span>
+                                <span class="role-title">Physician</span>
+                            </button>
+                            <button type="button" class="role-pill-btn {% if active_role == 'patient' %}active{% endif %}" data-role="patient" onclick="selectRole('patient')">
+                                <span class="role-icon">👤</span>
+                                <span class="role-title">Patient</span>
+                            </button>
+                            <button type="button" class="role-pill-btn {% if active_role == 'admin' %}active{% endif %}" data-role="admin" onclick="selectRole('admin')">
+                                <span class="role-icon">🛡️</span>
+                                <span class="role-title">Administrator</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick 1-Click Demo Accounts Strip -->
+                    <div class="demo-accounts-card">
+                        <div class="demo-accounts-header">
+                            <div class="demo-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                </svg>
+                                <span>Instant Demo Credentials</span>
+                            </div>
+                            <span class="demo-tip">Click to autofill &amp; test instantly</span>
+                        </div>
+                        <div class="demo-buttons-grid">
+                            <button type="button" class="demo-account-btn demo-btn-doctor" id="demoDoctorBtn" onclick="fillDemoCredentials('s.jenkins@healthguard.org', 'doctor123', 'doctor', 'Dr. Sarah Jenkins')">
+                                <div class="demo-btn-top">
+                                    <span class="demo-role-badge badge-teal">Physician</span>
+                                    <span class="demo-name">Dr. Jenkins</span>
+                                </div>
+                                <div class="demo-btn-bottom">Cardiology &bull; <code>doctor123</code></div>
+                            </button>
+
+                            <button type="button" class="demo-account-btn demo-btn-patient" id="demoPatientBtn" onclick="fillDemoCredentials('arthur.p@example.com', 'patient123', 'patient', 'Arthur Pendelton')">
+                                <div class="demo-btn-top">
+                                    <span class="demo-role-badge badge-indigo">Patient</span>
+                                    <span class="demo-name">Arthur P.</span>
+                                </div>
+                                <div class="demo-btn-bottom">High-Risk &bull; <code>patient123</code></div>
+                            </button>
+
+                            <button type="button" class="demo-account-btn demo-btn-admin" id="demoAdminBtn" onclick="fillDemoCredentials('admin@healthguard.org', 'admin123', 'admin', 'Chief Administrator')">
+                                <div class="demo-btn-top">
+                                    <span class="demo-role-badge badge-purple">Admin</span>
+                                    <span class="demo-name">Hospital Admin</span>
+                                </div>
+                                <div class="demo-btn-bottom">Population KPIs &bull; <code>admin123</code></div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Main Sign In Form -->
+                    <form method="POST" action="{{ url_for('portal.login', next=next_url) }}" class="auth-form" id="loginForm">
+                        <input type="hidden" name="role" id="selectedRoleInput" value="{{ active_role or 'doctor' }}">
+
+                        <div class="form-group">
+                            <label for="loginIdentifier" class="form-label">
+                                <span>Clinical Email or Username</span>
+                                <span class="role-hint-badge" id="roleHintBadge">Doctor Login</span>
+                            </label>
+                            <div class="input-with-icon">
+                                <span class="input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                        <polyline points="22,6 12,13 2,6"/>
+                                    </svg>
+                                </span>
+                                <input 
+                                    type="text" 
+                                    class="form-control auth-input" 
+                                    id="loginIdentifier" 
+                                    name="identifier" 
+                                    placeholder="e.g. s.jenkins@healthguard.org or dr.jenkins" 
+                                    value="{{ identifier or '' }}" 
+                                    required 
+                                    autocomplete="username">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-label-row">
+                                <label for="loginPassword" class="form-label">Access Password</label>
+                                <a href="javascript:void(0)" class="forgot-link" onclick="openForgotModal()">Forgot password?</a>
+                            </div>
+                            <div class="input-with-icon">
+                                <span class="input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                    </svg>
+                                </span>
+                                <input 
+                                    type="password" 
+                                    class="form-control auth-input" 
+                                    id="loginPassword" 
+                                    name="password" 
+                                    placeholder="Enter access password" 
+                                    required 
+                                    autocomplete="current-password">
+                                <button type="button" class="btn-toggle-password" id="togglePasswordBtn" onclick="togglePasswordVisibility('loginPassword', this)" title="Show/Hide Password">
+                                    <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    <svg class="eye-closed" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                                        <line x1="1" y1="1" x2="23" y2="23"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-options-row">
+                            <label class="remember-checkbox-label">
+                                <input type="checkbox" name="remember_me" id="rememberMe" checked>
+                                <span>Remember my clinical station</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-auth-submit" id="loginSubmitBtn">
+                            <span>Sign In to HealthGuard</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- REGISTRATION FORM SECTION -->
+                <div id="sectionRegister" style="{% if action != 'register' %}display: none;{% endif %}">
+                    <div class="auth-header">
+                        <h2>Create Clinical Account</h2>
+                        <p class="auth-subtitle">Register a new patient or clinician account with automated baseline ML scoring.</p>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('portal.register') }}" class="auth-form" id="registerForm">
+                        <!-- Role Choice for Registration -->
+                        <div class="form-group">
+                            <label class="form-label">Account Role</label>
+                            <div class="reg-role-toggle">
+                                <label class="reg-role-option">
+                                    <input type="radio" name="role" value="patient" checked onchange="toggleRegExtra('patient')">
+                                    <span class="reg-role-box">
+                                        <span class="role-icon">👤</span>
+                                        <span class="role-name">Patient Account</span>
+                                    </span>
+                                </label>
+                                <label class="reg-role-option">
+                                    <input type="radio" name="role" value="doctor" onchange="toggleRegExtra('doctor')">
+                                    <span class="reg-role-box">
+                                        <span class="role-icon">🩺</span>
+                                        <span class="role-name">Physician Account</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="regFullName" class="form-label">Full Name</label>
+                            <input 
+                                type="text" 
+                                class="form-control auth-input" 
+                                id="regFullName" 
+                                name="full_name" 
+                                placeholder="e.g. John Alexander" 
+                                required>
+                        </div>
+
+                        <div class="two-fields-row">
+                            <div class="form-group">
+                                <label for="regUsername" class="form-label">Username</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control auth-input" 
+                                    id="regUsername" 
+                                    name="username" 
+                                    placeholder="e.g. j.alexander" 
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label for="regEmail" class="form-label">Email Address</label>
+                                <input 
+                                    type="email" 
+                                    class="form-control auth-input" 
+                                    id="regEmail" 
+                                    name="email" 
+                                    placeholder="j.alexander@example.com" 
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="regExtraGroup">
+                            <label for="regExtraField" class="form-label" id="regExtraLabel">Age (Years)</label>
+                            <input 
+                                type="text" 
+                                class="form-control auth-input" 
+                                id="regExtraField" 
+                                name="extra_field" 
+                                placeholder="e.g. 52">
+                        </div>
+
+                        <div class="two-fields-row">
+                            <div class="form-group">
+                                <label for="regPassword" class="form-label">Password</label>
+                                <input 
+                                    type="password" 
+                                    class="form-control auth-input" 
+                                    id="regPassword" 
+                                    name="password" 
+                                    placeholder="Min. 6 chars" 
+                                    required 
+                                    minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="regConfirmPassword" class="form-label">Confirm Password</label>
+                                <input 
+                                    type="password" 
+                                    class="form-control auth-input" 
+                                    id="regConfirmPassword" 
+                                    name="confirm_password" 
+                                    placeholder="Repeat password" 
+                                    required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-teal btn-block btn-auth-submit" id="regSubmitBtn">
+                            <span>Register &amp; Access Portal</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Footer notice -->
+                <div class="auth-card-footer">
+                    <p class="text-muted small">
+                        Protected by HealthGuard Predictive AI security standards.
+                        <br>For technical inquiries or provider provisioning, contact <code>support@healthguard.org</code>.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="auth-modal-backdrop" id="forgotModalBackdrop" style="display: none;" onclick="closeForgotModal(event)">
+    <div class="auth-modal-dialog" onclick="event.stopPropagation()">
+        <div class="auth-modal-header">
+            <div class="auth-modal-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <h3>Clinical Password Recovery</h3>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeForgotModal()">&times;</button>
+        </div>
+        <div class="auth-modal-body">
+            <p>For security and clinical patient data protection, credentials are verified using encrypted hashes.</p>
+            
+            <div class="demo-reset-box">
+                <h4>Default Demo Environment Passwords:</h4>
+                <ul>
+                    <li><strong>Physicians:</strong> <code>doctor123</code> (e.g. <code>s.jenkins@healthguard.org</code>)</li>
+                    <li><strong>Patients:</strong> <code>patient123</code> (e.g. <code>arthur.p@example.com</code>)</li>
+                    <li><strong>Administrators:</strong> <code>admin123</code> (e.g. <code>admin@healthguard.org</code>)</li>
+                </ul>
+            </div>
+
+            <p class="small text-muted">
+                If you created a custom password during registration, please contact your local HealthGuard IT Administrator to re-seed or update your password hash.
+            </p>
+        </div>
+        <div class="auth-modal-footer">
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="closeForgotModal()">Close</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="closeForgotModal(); fillDemoCredentials('s.jenkins@healthguard.org', 'doctor123', 'doctor', 'Dr. Sarah Jenkins')">
+                Auto-fill Physician Demo &rarr;
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Role switcher configuration
+const roleConfig = {
+    doctor: {
+        label: 'Doctor Login',
+        placeholder: 'e.g. s.jenkins@healthguard.org or dr.jenkins',
+        badgeClass: 'badge-teal',
+        btnClass: 'btn-teal',
+        accentColor: 'var(--color-teal)'
+    },
+    patient: {
+        label: 'Patient Login',
+        placeholder: 'e.g. arthur.p@example.com or arthur.p',
+        badgeClass: 'badge-indigo',
+        btnClass: 'btn-primary',
+        accentColor: 'var(--color-indigo)'
+    },
+    admin: {
+        label: 'Administrator Login',
+        placeholder: 'e.g. admin@healthguard.org or admin',
+        badgeClass: 'badge-purple',
+        btnClass: 'btn-purple',
+        accentColor: 'var(--color-purple)'
+    }
+};
+
+function selectRole(role) {
+    document.getElementById('selectedRoleInput').value = role;
+
+    // Update pill styles
+    document.querySelectorAll('.role-pill-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.role === role);
+    });
+
+    // Update hint badge & input placeholder
+    const config = roleConfig[role] || roleConfig.doctor;
+    const badge = document.getElementById('roleHintBadge');
+    if (badge) {
+        badge.innerText = config.label;
+        badge.className = 'role-hint-badge ' + config.badgeClass;
+    }
+
+    const input = document.getElementById('loginIdentifier');
+    if (input && !input.value) {
+        input.placeholder = config.placeholder;
+    }
+
+    // Update submit button styling accent
+    const submitBtn = document.getElementById('loginSubmitBtn');
+    if (submitBtn) {
+        submitBtn.className = 'btn btn-block btn-auth-submit ' + config.btnClass;
+    }
+}
+
+// 1-Click Demo autofill
+function fillDemoCredentials(identifier, password, role, displayName) {
+    selectRole(role);
+    const idInput = document.getElementById('loginIdentifier');
+    const pwdInput = document.getElementById('loginPassword');
+    
+    if (idInput && pwdInput) {
+        idInput.value = identifier;
+        pwdInput.value = password;
+        
+        // Visual pulse feedback
+        idInput.style.borderColor = 'var(--color-emerald)';
+        pwdInput.style.borderColor = 'var(--color-emerald)';
+        idInput.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+        pwdInput.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+
+        setTimeout(() => {
+            idInput.style.borderColor = '';
+            pwdInput.style.borderColor = '';
+            idInput.style.boxShadow = '';
+            pwdInput.style.boxShadow = '';
+        }, 1200);
+
+        if (typeof showToast === 'function') {
+            showToast(`Auto-filled ${displayName} (${role.toUpperCase()}) demo credentials!`, 'success');
+        }
+    }
+}
+
+// Show/Hide password toggle
+function togglePasswordVisibility(fieldId, btn) {
+    const input = document.getElementById(fieldId);
+    if (!input) return;
+    const eyeOpen = btn.querySelector('.eye-open');
+    const eyeClosed = btn.querySelector('.eye-closed');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (eyeOpen) eyeOpen.style.display = 'none';
+        if (eyeClosed) eyeClosed.style.display = 'block';
+    } else {
+        input.type = 'password';
+        if (eyeOpen) eyeOpen.style.display = 'block';
+        if (eyeClosed) eyeClosed.style.display = 'none';
+    }
+}
+
+// Switch between Sign In and Register tabs
+function switchAuthMode(mode) {
+    const secSignIn = document.getElementById('sectionSignIn');
+    const secRegister = document.getElementById('sectionRegister');
+    const tabSignIn = document.getElementById('tabBtnSignIn');
+    const tabRegister = document.getElementById('tabBtnRegister');
+
+    if (mode === 'register') {
+        if (secSignIn) secSignIn.style.display = 'none';
+        if (secRegister) secRegister.style.display = 'block';
+        if (tabSignIn) tabSignIn.classList.remove('active');
+        if (tabRegister) tabRegister.classList.add('active');
+    } else {
+        if (secSignIn) secSignIn.style.display = 'block';
+        if (secRegister) secRegister.style.display = 'none';
+        if (tabSignIn) tabSignIn.classList.add('active');
+        if (tabRegister) tabRegister.classList.remove('active');
+    }
+}
+
+// Toggle extra field for registration (Age for Patient, Specialty for Doctor)
+function toggleRegExtra(role) {
+    const label = document.getElementById('regExtraLabel');
+    const field = document.getElementById('regExtraField');
+    if (!label || !field) return;
+
+    if (role === 'doctor') {
+        label.innerText = 'Medical Specialty';
+        field.placeholder = 'e.g. Cardiology, Neurology, Endocrinology';
+        field.type = 'text';
+    } else {
+        label.innerText = 'Age (Years)';
+        field.placeholder = 'e.g. 52';
+        field.type = 'number';
+    }
+}
+
+// Modal controls
+function openForgotModal() {
+    const modal = document.getElementById('forgotModalBackdrop');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeForgotModal(e) {
+    const modal = document.getElementById('forgotModalBackdrop');
+    if (modal) modal.style.display = 'none';
+}
+
+// Initialize role styling on load
+document.addEventListener('DOMContentLoaded', () => {
+    const initialRole = document.getElementById('selectedRoleInput')?.value || 'doctor';
+    selectRole(initialRole);
+});
+</script>
+{% endblock %}

@@ -34,10 +34,10 @@
                 <a href="{{ url_for('portal.index') }}" class="nav-link {% if request.endpoint == 'portal.index' %}active{% endif %}">
                     Overview
                 </a>
-                <a href="{{ url_for('portal.patient_portal', patient_id=1) }}" class="nav-link {% if 'patient' in request.endpoint %}active{% endif %}">
+                <a href="{{ url_for('portal.patient_portal', patient_id=1) }}" class="nav-link {% if request.endpoint and 'patient' in request.endpoint %}active{% endif %}">
                     Patient Portal
                 </a>
-                <a href="{{ url_for('portal.doctor_portal', doctor_id=1) }}" class="nav-link {% if 'doctor' in request.endpoint %}active{% endif %}">
+                <a href="{{ url_for('portal.doctor_portal', doctor_id=1) }}" class="nav-link {% if request.endpoint and 'doctor' in request.endpoint %}active{% endif %}">
                     Doctor Portal
                 </a>
                 <a href="{{ url_for('portal.admin_dashboard') }}" class="nav-link {% if request.endpoint == 'portal.admin_dashboard' %}active{% endif %}">
@@ -46,15 +46,61 @@
                 <a href="{{ url_for('portal.simulator') }}" class="nav-link {% if request.endpoint == 'portal.simulator' %}active{% endif %}">
                     ML Simulator
                 </a>
+                <a href="{{ url_for('portal.add_data_portal') }}" class="nav-link {% if request.endpoint == 'portal.add_data_portal' %}active{% endif %}">
+                    Add Data
+                </a>
+                <a href="{{ url_for('portal.login') }}" class="nav-link {% if request.endpoint == 'portal.login' %}active{% endif %}">
+                    Portal Login
+                </a>
             </nav>
 
             <div class="nav-actions">
-                <span class="status-pill">
-                    <span class="pulse-dot"></span> ML Model Online
-                </span>
-                <a href="/api/analytics" target="_blank" class="btn-api-badge" title="View Analytics API JSON">
-                    REST API
+                <a href="{{ url_for('portal.add_data_portal') }}" class="btn btn-outline-light btn-xs" title="Add Patients, Prescriptions, Appointments">
+                    + Add Data
                 </a>
+                <span class="status-pill">
+                    <span class="pulse-dot"></span> ML Online
+                </span>
+
+                {% if current_user %}
+                    <div class="user-session-badge">
+                        {% if current_user.role == 'doctor' %}
+                            <a href="{{ url_for('portal.doctor_portal', doctor_id=current_user.doctor_id or 1) }}" class="user-chip chip-doctor" title="Doctor Portal">
+                                <span class="user-role-dot dot-doctor"></span>
+                                <span class="user-name">{{ current_user.full_name }}</span>
+                                <span class="user-badge-tag">MD</span>
+                            </a>
+                        {% elif current_user.role == 'patient' %}
+                            <a href="{{ url_for('portal.patient_portal', patient_id=current_user.patient_id or 1) }}" class="user-chip chip-patient" title="Patient Portal">
+                                <span class="user-role-dot dot-patient"></span>
+                                <span class="user-name">{{ current_user.full_name }}</span>
+                                <span class="user-badge-tag">Patient</span>
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('portal.admin_dashboard') }}" class="user-chip chip-admin" title="Admin Analytics">
+                                <span class="user-role-dot dot-admin"></span>
+                                <span class="user-name">{{ current_user.full_name }}</span>
+                                <span class="user-badge-tag">Admin</span>
+                            </a>
+                        {% endif %}
+                        <a href="{{ url_for('portal.logout') }}" class="btn-logout" title="Sign Out">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                        </a>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('portal.login') }}" class="btn btn-primary btn-xs btn-signin-nav" id="navSignInBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -2px;">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        Sign In
+                    </a>
+                {% endif %}
             </div>
         </div>
     </header>

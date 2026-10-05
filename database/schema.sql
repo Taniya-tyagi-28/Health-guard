@@ -83,8 +83,26 @@ CREATE TABLE IF NOT EXISTS risk_assessments (
     FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
 );
 
+-- Users Table for Authentication & Role-Based Access Control
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('admin', 'doctor', 'patient')),
+    doctor_id INTEGER,
+    patient_id INTEGER,
+    full_name TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE SET NULL,
+    FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE SET NULL
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_prescriptions_patient ON prescriptions(patient_id);
 CREATE INDEX IF NOT EXISTS idx_adherence_patient ON adherence_logs(patient_id);
 CREATE INDEX IF NOT EXISTS idx_followup_patient ON follow_up_schedules(patient_id);
 CREATE INDEX IF NOT EXISTS idx_risk_patient ON risk_assessments(patient_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+

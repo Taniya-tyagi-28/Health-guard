@@ -45,7 +45,7 @@ st.sidebar.caption("Predictive Adherence & Follow-Up")
 
 portal_choice = st.sidebar.radio(
     "Navigation Portal:",
-    ["📊 Admin Dashboard", "👨‍⚕️ Doctor Portal", "👤 Patient Portal", "🧪 ML Risk Simulator"],
+    ["📊 Admin Dashboard", "👨‍⚕️ Doctor Portal", "👤 Patient Portal", "🧪 ML Risk Simulator", "➕ Add New Data"],
 )
 
 st.sidebar.markdown("---")
@@ -302,3 +302,136 @@ elif portal_choice == "🧪 ML Risk Simulator":
 
         st.markdown("#### Clinical Intervention Protocol")
         st.info(pred["recommendations"])
+
+
+# -------------------------------------------------------------
+# 5. ADD NEW DATA
+# -------------------------------------------------------------
+elif portal_choice == "➕ Add New Data":
+    st.title("➕ Add Clinical Data & Patient Records")
+    st.markdown("Register new patients, onboard physicians, prescribe medications, or schedule clinical appointments.")
+
+    data_type = st.radio(
+        "Select Record Type to Add:",
+        ["👤 New Patient", "💊 New Prescription", "📅 Follow-Up Appointment", "👨‍⚕️ New Physician"],
+        horizontal=True,
+    )
+
+    if data_type == "👤 New Patient":
+        st.subheader("Register New Patient Profile")
+        with st.form("form_st_patient"):
+            c_p1, c_p2 = st.columns(2)
+            with c_p1:
+                p_name = st.text_input("Full Name:", "Eleanor Vance")
+                p_age = st.number_input("Age:", min_value=0, max_value=125, value=58)
+                p_gender = st.selectbox("Gender:", ["Female", "Male", "Other"])
+            with c_p2:
+                p_email = st.text_input("Email:", "e.vance@example.com")
+                p_phone = st.text_input("Phone:", "+1-555-0199")
+                docs = query_db("SELECT id, name, specialty FROM doctors ORDER BY name ASC;")
+                doc_options = {f"{d['name']} ({d['specialty']})": d["id"] for d in docs}
+                p_doc = st.selectbox("Attending Physician:", list(doc_options.keys()) if doc_options else ["None"])
+
+            p_conditions = st.text_input("Chronic Conditions (comma separated):", "Type 2 Diabetes, Hypertension")
+
+            submit_pat = st.form_submit_button("Register Patient & Calculate Baseline Risk")
+            if submit_pat:
+                if not p_name:
+                    st.error("Patient name is required.")
+                else:
+                    doc_id = doc_options[p_doc] if doc_options and p_doc in doc_options else None
+                    new_id = execute_db(
+                        """INSERT INTO patients (doctor_id, name, age, gender, phone, email, chronic_conditions)
+                           VALUES (?, ?, ?, ?, ?, ?, ?);""",
+                        (doc_id, p_name, p_age, p_gender, p_phone, p_email, p_conditions),
+                    )
+                    # Baseline ML Risk
+                    pred = predict_adherence_risk(
+                        age=p_age, past_missed_doses=0, past_missed_appointments=0, treatment_duration_days=30, num_medications=1
+                    )
+                    execute_db(
+                        """INSERT INTO risk_assessments (patient_id, risk_level, risk_score, features_json, recommendations)
+                           VALUES (?, ?, ?, ?, ?);""",
+                        (new_id, pred["risk_level"], pred["confidence"], json.dumps(pred["features"]), pred["recommendations"]),
+                    )
+                    st.success(f"Patient '{p_name}' successfully created (ID #{new_id}) with baseline risk: {pred['risk_level']} Risk ({pred['confidence']}%)!")
+
+    elif data_type == "💊 New Prescription":
+        st.subheader("Issue New Medication Prescription")
+        patients = query_db("SELECT id, name, age FROM patients ORDER BY name ASC;")
+        doctors = query_db("SELECT id, name, specialty FROM doctors ORDER BY name ASC;")
+        p_dict = {f"{p['name']} (ID #{p['id']})": p["id"] for p in patients}
+        d_dict = {f"{d['name']} ({d['specialty']})": d["id"] for d in doctors}
+
+        if not p_dict:
+            st.warning("No patients registered yet. Please register a patient first.")
+        else:
+            with st.form("form_st_rx"):
+                c_rx1, c_rx2 = st.columns(2)
+                with c_rx1:
+                    sel_p = st.selectbox("Patient:", list(p_dict.keys()))
+                    rx_name = st.text_input("Medication Name:", "Metformin ER")
+                    rx_dose = st.text_input("Dosage:", "500mg")
+                with c_rx2:
+                    sel_d = st.selectbox("Prescribing Doctor:", list(d_dict.keys()))
+                    rx_freq = st.selectbox("Frequency:", ["Once daily (Morning)", "Once daily (Bedtime)", "Twice daily", "Three times daily", "As needed"])
+                    rx_days = st.number_input("Duration (Days):", min_value=1, max_value=365, value=30)
+
+                rx_instr = st.text_area("Instructions:", "Take with food.")
+                submit_rx = st.form_submit_button("Submit Prescription & Update Risk")
+                if submit_rx:
+                    execute_db(
+                        """INSERT INTO prescriptions 
+                           (patient_id, doctor_id, medication_name, dosage, frequency, instructions, start_date, treatment_duration_days, status)
+                           VALUES (?, ?, ?, ?, ?, ?, DATE('now'), ?, 'Active');""",
+                        (p_dict[sel_p], d_dict[sel_d], rx_name, rx_dose, rx_freq, rx_instr, rx_days),
+                    )
+                    st.success(f"Prescription for {rx_name} successfully recorded for {sel_p}!")
+
+    elif data_type == "📅 Follow-Up Appointment":
+        st.subheader("Schedule Clinical Appointment")
+        patients = query_db("SELECT id, name FROM patients ORDER BY name ASC;")
+        doctors = query_db("SELECT id, name, specialty FROM doctors ORDER BY name ASC;")
+        p_dict = {f"{p['name']} (ID #{p['id']})": p["id"] for p in patients}
+        d_dict = {f"{d['name']} ({d['specialty']})": d["id"] for d in doctors}
+
+        if not p_dict:
+            st.warning("No patients registered yet.")
+        else:
+            with st.form("form_st_fu"):
+                c_f1, c_f2 = st.columns(2)
+                with c_f1:
+                    sel_p = st.selectbox("Patient:", list(p_dict.keys()))
+                    appt_d = st.date_input("Appointment Date:")
+                with c_f2:
+                    sel_d = st.selectbox("Doctor:", list(d_dict.keys()))
+                    notes = st.text_input("Appointment Purpose / Notes:", "Follow-up & adherence check")
+
+                submit_fu = st.form_submit_button("Schedule Follow-Up")
+                if submit_fu:
+                    execute_db(
+                        """INSERT INTO follow_up_schedules (patient_id, doctor_id, appointment_date, status, notes)
+                           VALUES (?, ?, ?, 'Scheduled', ?);""",
+                        (p_dict[sel_p], d_dict[sel_d], str(appt_d), notes),
+                    )
+                    st.success("Appointment successfully scheduled!")
+
+    elif data_type == "👨‍⚕️ New Physician":
+        st.subheader("Onboard Medical Specialist")
+        with st.form("form_st_doc"):
+            d_name = st.text_input("Doctor Name:", "Dr. Jennifer Adams, MD")
+            d_spec = st.selectbox("Specialty:", ["Cardiology", "Endocrinology", "Internal Medicine", "Geriatrics", "Pulmonology", "Family Medicine"])
+            d_email = st.text_input("Email:", "j.adams@hospital.org")
+            d_phone = st.text_input("Phone:", "+1-555-4321")
+
+            submit_doc = st.form_submit_button("Register Physician")
+            if submit_doc:
+                if not d_name or not d_email:
+                    st.error("Name and Email are required.")
+                else:
+                    execute_db(
+                        "INSERT INTO doctors (name, specialty, email, phone) VALUES (?, ?, ?, ?);",
+                        (d_name, d_spec, d_email, d_phone),
+                    )
+                    st.success(f"Physician {d_name} successfully registered!")
+

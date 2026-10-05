@@ -241,3 +241,77 @@ class TestAnalyticsApi:
         assert "risk_distribution" in data
         assert "adherence_trend" in data
         assert "high_risk_patients" in data
+
+
+class TestDataCreationApi:
+    """Tests for creating new data records via API."""
+
+    def test_create_patient_success(self, client):
+        payload = {
+            "name": "Robert Taylor",
+            "age": 62,
+            "gender": "Male",
+            "phone": "+1-555-8888",
+            "email": "r.taylor@test.org",
+            "chronic_conditions": "Type 2 Diabetes",
+            "doctor_id": 1,
+        }
+        res = client.post("/api/patients", data=json.dumps(payload), content_type="application/json")
+        assert res.status_code == 201
+        data = res.get_json()
+        assert data["status"] == "success"
+        assert "patient_id" in data
+        assert "baseline_risk" in data
+        assert data["baseline_risk"]["risk_level"] in ["Low", "Medium", "High"]
+
+    def test_create_patient_validation_error(self, client):
+        # Missing name
+        payload = {"age": 50}
+        res = client.post("/api/patients", data=json.dumps(payload), content_type="application/json")
+        assert res.status_code == 400
+        assert "Patient name is required" in res.get_json()["error"]
+
+        # Invalid age
+        payload = {"name": "Test", "age": 200}
+        res = client.post("/api/patients", data=json.dumps(payload), content_type="application/json")
+        assert res.status_code == 422
+
+    def test_create_patient_duplicate_email(self, client):
+        payload = {
+            "name": "Duplicate Doe",
+            "age": 45,
+            "email": "john.doe@test.org",  # seeded in conftest
+        }
+        res = client.post("/api/patients", data=json.dumps(payload), content_type="application/json")
+        assert res.status_code == 409
+        assert "already exists" in res.get_json()["error"]
+
+    def test_create_doctor_success_and_get(self, client):
+        payload = {
+            "name": "Dr. Sarah Connor",
+            "specialty": "Neurology",
+            "email": "s.connor@test.org",
+            "phone": "+1-555-7777",
+        }
+        res = client.post("/api/doctors", data=json.dumps(payload), content_type="application/json")
+        assert res.status_code == 201
+        data = res.get_json()
+        assert data["status"] == "success"
+        assert "doctor_id" in data
+
+        # Check GET /api/doctors
+        get_res = client.get("/api/doctors")
+        assert get_res.status_code == 200
+        assert any(d["email"] == "s.connor@test.org" for d in get_res.get_json()["doctors"])
+
+    def test_create_follow_up_success(self, client):
+        payload = {
+            "patient_id": 1,
+            "doctor_id": 1,
+            "appointment_date": "2026-10-15 10:00:00",
+            "notes": "Quarterly cardiology review",
+        }
+        res = client.post("/api/follow-ups", data=json.dumps(payload), content_type="application/json")
+        assert res.status_code == 201
+        assert res.get_json()["status"] == "success"
+

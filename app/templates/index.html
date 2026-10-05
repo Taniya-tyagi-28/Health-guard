@@ -60,7 +60,7 @@
             <div class="portal-selector-box">
                 <label for="selectPatient" class="text-muted small">Select Patient:</label>
                 <div class="select-row">
-                    <select id="selectPatient" class="form-select" onchange="window.location.href='/patient/' + this.value;">
+                    <select id="selectPatient" class="form-select" onchange="document.getElementById('btnGoPatient').href='/patient/' + this.value; window.location.href='/patient/' + this.value;">
                         {% for p in patients %}
                             <option value="{{ p.id }}">{{ p.name }} (Age {{ p.age }})</option>
                         {% endfor %}
@@ -89,7 +89,7 @@
             <div class="portal-selector-box">
                 <label for="selectDoctor" class="text-muted small">Select Physician:</label>
                 <div class="select-row">
-                    <select id="selectDoctor" class="form-select" onchange="window.location.href='/doctor/' + this.value;">
+                    <select id="selectDoctor" class="form-select" onchange="document.getElementById('btnGoDoctor').href='/doctor/' + this.value; window.location.href='/doctor/' + this.value;">
                         {% for d in doctors %}
                             <option value="{{ d.id }}">{{ d.name }} - {{ d.specialty }}</option>
                         {% endfor %}
@@ -146,6 +146,56 @@
                 </a>
             </div>
         </div>
+
+        <!-- Data Entry Hub Card -->
+        <div class="portal-card">
+            <div class="portal-card-header">
+                <div class="portal-icon bg-emerald">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="portal-tag">Data Entry & Intake</span>
+                    <h3>Add New Data</h3>
+                </div>
+            </div>
+            <p class="portal-card-desc">
+                Register new patients, onboard physicians, prescribe medications, schedule follow-up appointments, and log intake doses with automatic ML baseline scoring.
+            </p>
+            <div class="portal-action-box">
+                <a href="{{ url_for('portal.add_data_portal') }}" class="btn btn-success btn-block">
+                    Open Data Intake Hub &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- Clinical Authentication & Role Login Card -->
+        <div class="portal-card">
+            <div class="portal-card-header">
+                <div class="portal-icon bg-indigo">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/>
+                        <line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="portal-tag">Unified Authentication</span>
+                    <h3>Portal Login</h3>
+                </div>
+            </div>
+            <p class="portal-card-desc">
+                Sign in to role-specific clinical portals for Physicians, Patients, and Hospital Administrators with 1-click instant demo access.
+            </p>
+            <div class="portal-action-box">
+                <a href="{{ url_for('portal.login') }}" class="btn btn-primary btn-block">
+                    Sign In to Portal &rarr;
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -170,6 +220,13 @@
                 <code>/api/patients</code>
             </div>
             <p>Retrieves all patients with real-time risk scores and adherence percentages.</p>
+        </div>
+        <div class="endpoint-card">
+            <div class="endpoint-meta">
+                <span class="method-badge method-post">POST</span>
+                <code>/api/patients</code>
+            </div>
+            <p>Registers new patient and calculates initial ML risk assessment baseline.</p>
         </div>
         <div class="endpoint-card">
             <div class="endpoint-meta">

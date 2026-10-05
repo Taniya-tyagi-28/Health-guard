@@ -23,6 +23,10 @@ def seed_database(db_path: str = None):
     cur = conn.cursor()
 
     # Clear existing data in case of re-seed
+    try:
+        cur.execute("DELETE FROM users;")
+    except sqlite3.OperationalError:
+        pass
     cur.execute("DELETE FROM risk_assessments;")
     cur.execute("DELETE FROM adherence_logs;")
     cur.execute("DELETE FROM follow_up_schedules;")
@@ -270,6 +274,10 @@ def seed_database(db_path: str = None):
                 prediction_result["recommendations"],
             ),
         )
+
+    print("Seeding Users & Clinical Authentication Accounts...")
+    from app.auth import seed_default_users
+    seed_default_users(conn)
 
     conn.commit()
     conn.close()
