@@ -197,10 +197,48 @@ class TestLoginRoutes:
         assert res.status_code == 302
         assert "/doctor/" in res.headers["Location"]
 
-    def test_overview_page_accessible(self, client, test_db):
+    def test_unauthenticated_portals_redirect_to_login(self, client, test_db):
+        """Verify that without logging in, user cannot open any portal or overview page."""
         ensure_auth_tables(test_db)
-        res = client.get("/overview")
-        assert res.status_code == 200
-        html = res.data.decode("utf-8")
-        assert "Predictive Patient Follow-Up" in html
+        protected_routes = [
+            "/overview",
+            "/portal",
+            "/index",
+            "/patient/1",
+            "/doctor/1",
+            "/admin",
+            "/simulator",
+            "/add-data",
+        ]
+        for route in protected_routes:
+            res = client.get(route, follow_redirects=False)
+            assert res.status_code == 302, f"Expected 302 redirect for unauthenticated {route}, got {res.status_code}"
+            assert "/login" in res.headers["Location"], f"Expected redirect to /login for {route}, got {res.headers['Location']}"
+
+    def test_authenticated_user_can_access_portals(self, client, test_db):
+        """Verify that after logging in, user can access portals and overview."""
+        ensure_auth_tables(test_db)
+        # Sign in as doctor
+        client.post(
+            "/login",
+            data={"identifier": "s.jenkins@healthguard.org", "password": "doctor123", "role": "doctor"},
+        )
+        
+        # Overview should now be accessible
+        res_overview = client.get("/overview")
+        assert res_overview.status_code == 200
+        assert "Predictive Patient Follow-Up" in res_overview.data.decode("utf-8")
+
+        # Doctor portal accessible
+        res_doc = client.get("/doctor/1")
+        assert res_doc.status_code == 200
+
+        # Simulator accessible
+        res_sim = client.get("/simulator")
+        assert res_sim.status_code == 200
+
+        # Add data portal accessible
+        res_add = client.get("/add-data")
+        assert res_add.status_code == 200
+
 

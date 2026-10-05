@@ -2341,5 +2341,18 @@ a:hover {
     font-weight: 500;
 }
 
+.nav-portals-locked-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.775rem;
+    color: var(--text-muted);
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-full);
+}
+
+
 
 

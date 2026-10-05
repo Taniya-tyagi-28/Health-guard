@@ -13,6 +13,25 @@ from app.auth import authenticate_user, register_new_user, ensure_auth_tables
 portal_bp = Blueprint("portal", __name__)
 
 
+@portal_bp.before_request
+def enforce_login_for_portals():
+    """
+    Security Barrier & Authentication Guard:
+    Restricts access to all clinical portals, dashboards, simulator,
+    data intake, and platform overview until the user is authenticated.
+    Unauthenticated requests to any portal are redirected directly to '/login'.
+    """
+    public_endpoints = {"portal.login", "portal.register", "portal.logout", "static"}
+
+    if request.endpoint is None or request.endpoint in public_endpoints:
+        return None
+
+    if "user_id" not in session:
+        flash("Authentication required. Please sign in to access clinical portals and patient records.", "warning")
+        return redirect(url_for("portal.login", next=request.path))
+
+
+
 @portal_bp.route("/overview")
 @portal_bp.route("/portal")
 @portal_bp.route("/index")
