@@ -178,3 +178,25 @@ class TestLoginRoutes:
 
         with client.session_transaction() as sess:
             assert "user_id" not in sess
+
+    def test_root_redirects_unauthenticated_to_login(self, client, test_db):
+        ensure_auth_tables(test_db)
+        res = client.get("/", follow_redirects=False)
+        assert res.status_code == 302
+        assert "/login" in res.headers["Location"]
+
+    def test_root_redirects_authenticated_doctor(self, client, test_db):
+        ensure_auth_tables(test_db)
+        # Sign in as doctor
+        client.post("/login", data={"identifier": "s.jenkins@healthguard.org", "password": "doctor123", "role": "doctor"})
+        res = client.get("/", follow_redirects=False)
+        assert res.status_code == 302
+        assert "/doctor/" in res.headers["Location"]
+
+    def test_overview_page_accessible(self, client, test_db):
+        ensure_auth_tables(test_db)
+        res = client.get("/overview")
+        assert res.status_code == 200
+        html = res.data.decode("utf-8")
+        assert "Predictive Patient Follow-Up" in html
+

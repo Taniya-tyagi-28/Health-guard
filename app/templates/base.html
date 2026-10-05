@@ -31,7 +31,7 @@
             </a>
 
             <nav class="nav-links">
-                <a href="{{ url_for('portal.index') }}" class="nav-link {% if request.endpoint == 'portal.index' %}active{% endif %}">
+                <a href="{{ url_for('portal.overview') }}" class="nav-link {% if request.endpoint in ['portal.overview', 'portal.index'] %}active{% endif %}">
                     Overview
                 </a>
                 <a href="{{ url_for('portal.patient_portal', patient_id=1) }}" class="nav-link {% if request.endpoint and 'patient' in request.endpoint %}active{% endif %}">

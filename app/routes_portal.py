@@ -14,8 +14,29 @@ portal_bp = Blueprint("portal", __name__)
 
 
 @portal_bp.route("/")
+def root():
+    """
+    Default entry point:
+    Redirects unauthenticated visitors directly to the Login page.
+    If already authenticated, redirects them to their respective role portal.
+    """
+    if "user_id" not in session:
+        return redirect(url_for("portal.login"))
+
+    role = session.get("role")
+    if role == "doctor":
+        return redirect(url_for("portal.doctor_portal", doctor_id=session.get("doctor_id") or 1))
+    elif role == "patient":
+        return redirect(url_for("portal.patient_portal", patient_id=session.get("patient_id") or 1))
+    elif role == "admin":
+        return redirect(url_for("portal.admin_dashboard"))
+    return redirect(url_for("portal.overview"))
+
+
+@portal_bp.route("/overview")
 @portal_bp.route("/portal")
-def index():
+@portal_bp.route("/index")
+def overview():
     """Platform landing page with portal directory and quick-access selector."""
     doctors = query_db("SELECT id, name, specialty FROM doctors ORDER BY id ASC;")
     patients = query_db("SELECT id, name, age FROM patients ORDER BY id ASC;")
@@ -25,6 +46,14 @@ def index():
         "active_rx": query_db("SELECT COUNT(*) as c FROM prescriptions WHERE status = 'Active';", one=True)["c"],
     }
     return render_template("index.html", doctors=doctors, patients=patients, kpis=kpis)
+
+
+def index():
+    """Backward compatibility alias for portal.index."""
+    return overview()
+
+portal_bp.add_url_rule("/overview-page", endpoint="index", view_func=overview)
+
 
 
 @portal_bp.route("/patient")
