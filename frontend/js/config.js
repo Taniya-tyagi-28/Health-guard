@@ -1,10 +1,11 @@
 /**
  * HealthGuard Frontend API Configuration
  * Supports connecting to local Flask dev server (http://127.0.0.1:5000)
- * or production Render backend (https://your-service.onrender.com).
+ * or production Render backend (https://healthguard-ovsm.onrender.com).
  */
 
-const DEFAULT_API_URL = "http://127.0.0.1:5000";
+const DEFAULT_API_URL = "https://healthguard-ovsm.onrender.com";
+
 
 function getApiBaseUrl() {
     return (

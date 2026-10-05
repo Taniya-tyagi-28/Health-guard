@@ -1,6 +1,13 @@
 # HealthGuard: Predictive Patient Follow-Up & Medication Adherence Platform
 
+[![Live Website](https://img.shields.io/badge/Live%20Demo-Render-10b981?style=for-the-badge&logo=render&logoColor=white)](https://healthguard-ovsm.onrender.com)
+[![Login Portal](https://img.shields.io/badge/Portal%20Login-HealthGuard-6366f1?style=for-the-badge)](https://healthguard-ovsm.onrender.com/login)
+
+**Live Production URL:** [https://healthguard-ovsm.onrender.com](https://healthguard-ovsm.onrender.com)  
+**Live Login Portal:** [https://healthguard-ovsm.onrender.com/login](https://healthguard-ovsm.onrender.com/login)
+
 **HealthGuard** is an intelligent healthcare platform designed to proactively detect and mitigate patient medication non-adherence and missed appointments. Combining a **Scikit-Learn Random Forest** classification model with an **SQLite** database, **Flask REST APIs**, and responsive **Clinical Portals**, the platform provides role-tailored workflows for patients, physicians, and healthcare administrators.
+
 
 ---
 
