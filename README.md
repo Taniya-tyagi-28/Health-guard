@@ -155,18 +155,30 @@ streamlit run streamlit_app.py
 
 ---
 
-## Deployment (Online Hosting)
+## Deployment (Online Hosting on Render)
 
-To make HealthGuard accessible publicly on the web (instead of `127.0.0.1`), deploy it to a cloud provider:
+HealthGuard is pre-configured for **1-click cloud deployment on Render** (Free Tier):
 
-- **Render**: The repository includes [render.yaml](render.yaml) configured with:
-  ```yaml
-  buildCommand: "pip install -r requirements.txt && python ml/train_model.py && python database/seed_data.py"
-  startCommand: "gunicorn \"app:create_app()\" --bind 0.0.0.0:$PORT"
-  ```
-- **Heroku / Railway**: Uses the included [Procfile](Procfile) (`web: gunicorn "app:create_app()"`).
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Taniya-tyagi-28/Health-guard)
 
-Once deployed online, replace `http://127.0.0.1:5000` links with your deployed URL (e.g. `https://healthguard.onrender.com`).
+### Instant 1-Click Deployment:
+1. Click the **[Deploy to Render](https://render.com/deploy?repo=https://github.com/Taniya-tyagi-28/Health-guard)** button above.
+2. Sign in to your [Render.com](https://render.com) account (free).
+3. Click **Apply** / **Create Web Service**.
+4. Render will automatically build the environment, train the ML model, seed clinical data, and launch the live URL (e.g. `https://healthguard.onrender.com`).
+
+---
+
+### Manual Deployment via Render Dashboard:
+1. Go to [dashboard.render.com](https://dashboard.render.com) and click **New + > Web Service**.
+2. Select your repository `Taniya-tyagi-28/Health-guard`.
+3. Configure the settings:
+   - **Environment:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt && python ml/train_model.py && python database/seed_data.py`
+   - **Start Command:** `gunicorn "app:create_app()" --bind 0.0.0.0:$PORT`
+   - **Plan:** Free
+4. Click **Deploy Web Service**.
+
 
 ---
 
