@@ -11,9 +11,14 @@
     <div class="auth-container">
         <!-- Left Side: Platform Intelligence Showcase -->
         <div class="auth-showcase-panel">
-            <div class="auth-brand-badge">
-                <span class="pulse-dot"></span>
-                <span>Clinical Decision Support Platform</span>
+            <div class="auth-showcase-logo-row">
+                <div class="auth-catchy-logo-bubble">
+                    <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="HealthGuard AI Logo" class="auth-large-logo-svg">
+                </div>
+                <div class="auth-brand-badge">
+                    <span class="pulse-dot"></span>
+                    <span>HealthGuard AI &bull; Clinical Intelligence</span>
+                </div>
             </div>
 
             <h1 class="auth-showcase-title">
@@ -149,7 +154,16 @@
                 <!-- SIGN IN FORM SECTION -->
                 <div id="sectionSignIn" style="{% if action == 'register' %}display: none;{% endif %}">
                     <div class="auth-header">
-                        <h2>Welcome to HealthGuard</h2>
+                        <div class="auth-header-brand-wrap">
+                            <div class="auth-card-logo-pill">
+                                <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="HealthGuard" class="auth-card-logo-img">
+                            </div>
+                            <div>
+                                <div class="auth-header-app-name">Health<span class="brand-gradient-text">Guard</span> <span class="auth-header-ai-badge">AI</span></div>
+                                <div class="auth-header-sub">Clinical Decision Support System</div>
+                            </div>
+                        </div>
+                        <h2>Sign In to HealthGuard</h2>
                         <p class="auth-subtitle">Select your clinical role or choose a 1-click demo account below.</p>
                     </div>
 

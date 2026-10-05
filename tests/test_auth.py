@@ -88,12 +88,13 @@ class TestLoginRoutes:
         res = client.get("/login")
         assert res.status_code == 200
         html = res.data.decode("utf-8")
-        assert "Welcome to HealthGuard" in html
+        assert "Sign In to HealthGuard" in html
         assert "loginIdentifier" in html
         assert "loginPassword" in html
         assert "demoDoctorBtn" in html
         assert "demoPatientBtn" in html
         assert "demoAdminBtn" in html
+        assert "logo.svg" in html
 
     def test_post_login_doctor_success(self, client, test_db):
         ensure_auth_tables(test_db)
@@ -179,11 +180,14 @@ class TestLoginRoutes:
         with client.session_transaction() as sess:
             assert "user_id" not in sess
 
-    def test_root_redirects_unauthenticated_to_login(self, client, test_db):
+    def test_root_serves_login_page(self, client, test_db):
         ensure_auth_tables(test_db)
-        res = client.get("/", follow_redirects=False)
-        assert res.status_code == 302
-        assert "/login" in res.headers["Location"]
+        res = client.get("/")
+        assert res.status_code == 200
+        html = res.data.decode("utf-8")
+        assert "Sign In to HealthGuard" in html
+        assert "logo.svg" in html
+
 
     def test_root_redirects_authenticated_doctor(self, client, test_db):
         ensure_auth_tables(test_db)

@@ -12,23 +12,27 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom Style -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
     <!-- Top Navigation Bar -->
     <header class="navbar">
         <div class="nav-container">
-            <a href="{{ url_for('portal.index') }}" class="brand-logo">
-                <div class="brand-icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
+            <a href="{{ url_for('portal.login') }}" class="brand-logo" title="HealthGuard Clinical Intelligence">
+                <div class="brand-logo-catchy">
+                    <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="HealthGuard Shield Logo" class="catchy-logo-img">
                 </div>
                 <div class="brand-text">
-                    <span class="brand-name">HealthGuard</span>
-                    <span class="brand-sub">Predictive Adherence AI</span>
+                    <div class="brand-title-wrap">
+                        <span class="brand-name">Health<span class="brand-gradient-text">Guard</span></span>
+                        <span class="brand-ai-chip">AI</span>
+                    </div>
+                    <span class="brand-sub">Predictive Clinical Adherence</span>
                 </div>
             </a>
+
 
             <nav class="nav-links">
                 <a href="{{ url_for('portal.overview') }}" class="nav-link {% if request.endpoint in ['portal.overview', 'portal.index'] %}active{% endif %}">

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="favShield" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <linearGradient id="favEkg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+  </defs>
+  <path d="M60 8 L104 25 C104 70 85 101 60 114 C35 101 16 70 16 25 Z" fill="#0f172a" stroke="url(#favShield)" stroke-width="5" />
+  <rect x="54" y="32" width="12" height="42" rx="4" fill="rgba(99, 102, 241, 0.35)" />
+  <rect x="39" y="47" width="42" height="12" rx="4" fill="rgba(99, 102, 241, 0.35)" />
+  <path d="M26 60 L44 60 L50 42 L58 76 L66 38 L74 68 L80 56 L86 60 L94 60" fill="none" stroke="url(#favEkg)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="66" cy="38" r="4" fill="#38bdf8" />
+</svg>

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <!-- Background Shield Gradient -->
+    <linearGradient id="shieldBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <!-- Glowing Border Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+
+    <!-- Heartbeat Line Gradient -->
+    <linearGradient id="ekgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="40%" stop-color="#818cf8" />
+      <stop offset="70%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#a78bfa" />
+    </linearGradient>
+
+    <!-- Neon Glow Filter -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#6366f1" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Outer Protective Shield with Glow -->
+  <path d="M60 8 L104 25 C104 70 85 101 60 114 C35 101 16 70 16 25 Z" 
+        fill="url(#shieldBg)" 
+        stroke="url(#borderGrad)" 
+        stroke-width="3" 
+        filter="url(#softShadow)" />
+
+  <!-- Inner Ambient Shield Accent -->
+  <path d="M60 17 L96 31 C96 68 80 94 60 105 C40 94 24 68 24 31 Z" 
+        fill="none" 
+        stroke="rgba(99, 102, 241, 0.25)" 
+        stroke-width="1.5" 
+        stroke-dasharray="3,3" />
+
+  <!-- Medical Plus / Cross in Background -->
+  <rect x="54" y="32" width="12" height="42" rx="4" fill="rgba(99, 102, 241, 0.2)" />
+  <rect x="39" y="47" width="42" height="12" rx="4" fill="rgba(99, 102, 241, 0.2)" />
+
+  <!-- High-Tech EKG Heartbeat Pulse Wave with Neon Glow -->
+  <path d="M26 60 L44 60 L50 42 L58 76 L66 38 L74 68 L80 56 L86 60 L94 60" 
+        fill="none" 
+        stroke="url(#ekgGrad)" 
+        stroke-width="3.5" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        filter="url(#neonGlow)" />
+
+  <!-- Active AI Pulse Node Dots -->
+  <circle cx="66" cy="38" r="3.5" fill="#38bdf8" filter="url(#neonGlow)">
+    <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="58" cy="76" r="3" fill="#10b981" filter="url(#neonGlow)" />
+  <circle cx="26" cy="60" r="2.5" fill="#818cf8" />
+  <circle cx="94" cy="60" r="2.5" fill="#34d399" />
+</svg>

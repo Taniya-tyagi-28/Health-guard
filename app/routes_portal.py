@@ -13,26 +13,6 @@ from app.auth import authenticate_user, register_new_user, ensure_auth_tables
 portal_bp = Blueprint("portal", __name__)
 
 
-@portal_bp.route("/")
-def root():
-    """
-    Default entry point:
-    Redirects unauthenticated visitors directly to the Login page.
-    If already authenticated, redirects them to their respective role portal.
-    """
-    if "user_id" not in session:
-        return redirect(url_for("portal.login"))
-
-    role = session.get("role")
-    if role == "doctor":
-        return redirect(url_for("portal.doctor_portal", doctor_id=session.get("doctor_id") or 1))
-    elif role == "patient":
-        return redirect(url_for("portal.patient_portal", patient_id=session.get("patient_id") or 1))
-    elif role == "admin":
-        return redirect(url_for("portal.admin_dashboard"))
-    return redirect(url_for("portal.overview"))
-
-
 @portal_bp.route("/overview")
 @portal_bp.route("/portal")
 @portal_bp.route("/index")
@@ -48,11 +28,8 @@ def overview():
     return render_template("index.html", doctors=doctors, patients=patients, kpis=kpis)
 
 
-def index():
-    """Backward compatibility alias for portal.index."""
-    return overview()
-
 portal_bp.add_url_rule("/overview-page", endpoint="index", view_func=overview)
+
 
 
 
@@ -504,16 +481,29 @@ def inject_current_user():
     return {"current_user": None}
 
 
+@portal_bp.route("/", methods=["GET", "POST"])
 @portal_bp.route("/login", methods=["GET", "POST"])
 def login():
     """
-    Unified Clinical Authentication Portal.
-    Supports Doctor, Patient, and Admin login with role-aware redirection,
-    instant demo autofill credentials, and security validation.
+    Primary Authentication Portal & Default Landing Page.
+    Directly renders the login interface at '/' and '/login' for immediate access.
+    If already authenticated, redirects directly to their active role portal.
     """
     next_url = request.args.get("next")
     prefill_role = request.args.get("role", "doctor")
     action = request.args.get("action", "login")  # 'login' or 'register'
+
+    # If already logged in and visiting without an action, route directly to their dashboard
+    if "user_id" in session and request.method == "GET" and action != "register":
+        role = session.get("role")
+        if role == "doctor":
+            return redirect(url_for("portal.doctor_portal", doctor_id=session.get("doctor_id") or 1))
+        elif role == "patient":
+            return redirect(url_for("portal.patient_portal", patient_id=session.get("patient_id") or 1))
+        elif role == "admin":
+            return redirect(url_for("portal.admin_dashboard"))
+        return redirect(url_for("portal.overview"))
+
 
     if request.method == "POST":
         identifier = request.form.get("identifier", "").strip()
