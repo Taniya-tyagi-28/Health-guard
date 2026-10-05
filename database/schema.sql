@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS doctors (
     phone TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 -- Patients Table
 CREATE TABLE IF NOT EXISTS patients (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,7 +97,7 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE SET NULL
 );
 
--- Indexes for performance
+-- Indexes for performance'
 CREATE INDEX IF NOT EXISTS idx_prescriptions_patient ON prescriptions(patient_id);
 CREATE INDEX IF NOT EXISTS idx_adherence_patient ON adherence_logs(patient_id);
 CREATE INDEX IF NOT EXISTS idx_followup_patient ON follow_up_schedules(patient_id);
